@@ -498,7 +498,7 @@ const App = () => {
         </div>
 
         <div className="px-24 py-20">
-          <div className="flex items-center gap-4 mb-6">
+          <div className="flex items-center gap-4 mb-8">
             <span className="text-lg font-black tracking-widest uppercase text-slate-400 bg-slate-100 px-6 py-2 rounded-full">
               {t.id}
             </span>
@@ -515,13 +515,20 @@ const App = () => {
             </span>
           </div>
 
-          <h2 className="text-[64px] font-black text-slate-900 leading-[1.1] tracking-tight mb-8">
+          <h2 className="text-[56px] font-black text-slate-900 leading-[1.2] tracking-tight mb-10">
             {t.title}
           </h2>
           {t.desc && (
-            <p className="text-2xl text-slate-500 leading-relaxed max-w-5xl mb-16 whitespace-pre-wrap">
-              {t.desc}
-            </p>
+            <div className="bg-slate-50 rounded-[32px] p-10 border border-slate-200 mb-16 relative">
+              <div className="absolute left-0 top-10 bottom-10 w-2 rounded-r-full bg-[#B89F5D]" />
+              <div className="flex items-center gap-3 mb-5 opacity-60">
+                <Layout className="w-6 h-6" />
+                <span className="text-sm font-black tracking-widest uppercase">Context & Description</span>
+              </div>
+              <div className="text-[24px] text-slate-700 leading-[2] whitespace-pre-wrap font-medium pl-2">
+                {t.desc}
+              </div>
+            </div>
           )}
 
           {t.notes && t.notes.trim() !== "" && (
@@ -540,23 +547,36 @@ const App = () => {
           )}
 
           {exportImgs.length > 0 && (
-            <div className="space-y-12">
-              <div className="text-lg font-black tracking-widest text-slate-400 uppercase flex items-center gap-3 mb-8 border-b border-slate-200 pb-4">
-                <ImageIcon className="w-6 h-6" /> Attached Visuals
-              </div>
-              {exportImgs.map((img, imgIdx) => (
-                <div
-                  key={imgIdx}
-                  className="bg-slate-50 rounded-[40px] p-4 border border-slate-200"
-                >
-                  <img
-                    src={img}
-                    alt="attachment"
-                    className="w-full object-contain rounded-[32px] shadow-sm"
-                    style={{ maxHeight: "1600px" }}
-                  />
+            <div className="mt-20 pt-16 border-t-2 border-dashed border-slate-200">
+              <div className="flex items-center gap-5 mb-12">
+                <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center">
+                  <ImageIcon className="w-8 h-8 text-slate-500" />
                 </div>
-              ))}
+                <div>
+                  <h3 className="text-[28px] font-black text-slate-800 tracking-widest uppercase">Attached Visuals</h3>
+                  <p className="text-xl text-slate-400 font-medium mt-1">議題相關視覺參考圖檔</p>
+                </div>
+              </div>
+              <div className="space-y-16">
+                {exportImgs.map((img, imgIdx) => (
+                  <div
+                    key={imgIdx}
+                    className="bg-white rounded-[40px] p-8 border border-slate-200 shadow-sm relative"
+                  >
+                    {exportImgs.length > 1 && (
+                      <div className="absolute -top-5 left-1/2 -translate-x-1/2 px-6 py-2 bg-slate-800 text-white text-sm font-bold rounded-full tracking-widest shadow-md">
+                        IMAGE {imgIdx + 1}
+                      </div>
+                    )}
+                    <img
+                      src={img}
+                      alt="attachment"
+                      className="w-full object-contain rounded-[24px]"
+                      style={{ maxHeight: "1600px" }}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -619,7 +639,7 @@ const App = () => {
                 )}
                 <div className="flex gap-8">
                   <div className="w-24 shrink-0 pt-2">
-                    <span className="text-5xl font-black text-slate-200 font-mono tracking-tighter">
+                    <span className="text-4xl font-black text-slate-200 font-mono tracking-tighter">
                       {String(idx + 1).padStart(2, "0")}
                     </span>
                   </div>
@@ -628,7 +648,7 @@ const App = () => {
                       <span className="text-sm font-bold text-[#B89F5D] tracking-widest uppercase">
                         {t.id}
                       </span>
-                      <h3 className="text-3xl font-bold text-slate-800 leading-tight">
+                      <h3 className="text-[28px] font-bold text-slate-800 leading-tight">
                         {t.title}
                       </h3>
                       <span
@@ -1013,7 +1033,7 @@ const App = () => {
                 </span>
               </div>
 
-              <h2 className="text-4xl md:text-[56px] lg:text-[64px] font-black text-slate-900 mb-12 lg:mb-16 leading-tight tracking-tighter">
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-slate-900 mb-10 lg:mb-12 leading-tight tracking-tighter">
                 議程目錄
               </h2>
 
@@ -1027,7 +1047,7 @@ const App = () => {
                     >
                       <div className="absolute left-0 top-0 bottom-0 w-2 bg-transparent group-hover:bg-[#338F88] transition-colors" />
 
-                      <div className="text-[80px] leading-none font-black text-slate-100 group-hover:text-[#338F88]/10 transition-colors w-24 shrink-0 font-mono tracking-tighter">
+                      <div className="text-[64px] leading-none font-black text-slate-100 group-hover:text-[#338F88]/10 transition-colors w-24 shrink-0 font-mono tracking-tighter">
                         {String(idx + 1).padStart(2, "0")}
                       </div>
 
@@ -1046,10 +1066,10 @@ const App = () => {
                             {t.status === "resolved" ? "已決議" : "討論中"}
                           </span>
                         </div>
-                        <h3 className="text-3xl md:text-[36px] font-bold text-slate-900 mb-5 group-hover:text-[#338F88] transition-colors leading-[1.2] tracking-tight">
+                        <h3 className="text-2xl md:text-[28px] font-bold text-slate-900 mb-4 group-hover:text-[#338F88] transition-colors leading-[1.2] tracking-tight">
                           {t.title}
                         </h3>
-                        <p className="text-[16px] text-slate-600 font-medium whitespace-pre-wrap leading-[1.8] max-w-3xl opacity-90">
+                        <p className="text-[15px] text-slate-600 font-medium whitespace-pre-wrap leading-[1.8] max-w-3xl opacity-90">
                           {t.desc || "無議題描述"}
                         </p>
                       </div>
@@ -1137,7 +1157,7 @@ const App = () => {
                       Executive Summary
                     </span>
                   </div>
-                  <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
+                  <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">
                     會議決議與筆記總覽
                   </h2>
                 </div>
@@ -1176,7 +1196,7 @@ const App = () => {
 
                         <div className="flex flex-col gap-3">
                           <div className="flex items-center gap-3">
-                            <span className="text-lg font-bold text-slate-800 group-hover:text-[#338F88] transition-colors">
+                            <span className="text-xl md:text-[22px] font-bold text-slate-800 group-hover:text-[#338F88] transition-colors">
                               {String(idx + 1).padStart(2, "0")}. {t.title}
                             </span>
                             <span
@@ -1270,16 +1290,23 @@ const App = () => {
                 </div>
               </div>
 
-              <h2 className="text-[40px] md:text-[56px] lg:text-[72px] font-black text-slate-900 mb-12 leading-[1.1] tracking-tighter">
+              <h2 className="text-3xl md:text-[40px] lg:text-[48px] font-black text-slate-900 mb-10 leading-[1.2] tracking-tight">
                 <span className="relative inline-block px-2">
                   <span className="absolute bottom-[10%] left-[-2%] w-[104%] h-[40%] bg-[#FCEBAF] rounded-sm transform -rotate-1 z-0 shadow-[0_4px_12px_rgba(252,235,175,0.4)]"></span>
                   <span className="relative z-10">{currentTopic.title}</span>
                 </span>
               </h2>
 
-              <p className="text-[18px] md:text-[22px] text-slate-600 mb-20 max-w-4xl leading-[1.9] whitespace-pre-wrap font-normal tracking-[0.02em]">
-                {currentTopic.desc || "議題描述尚未輸入。"}
-              </p>
+              <div className="bg-slate-50 rounded-[32px] p-8 md:p-10 border border-slate-200 mb-16 relative">
+                <div className="absolute left-0 top-8 bottom-8 w-1.5 rounded-r-full bg-[#B89F5D]" />
+                <div className="flex items-center gap-2 mb-4 opacity-50 pl-2">
+                  <Layout className="w-5 h-5" />
+                  <span className="text-xs font-black tracking-widest uppercase">Context & Description</span>
+                </div>
+                <div className="text-[17px] md:text-[20px] text-slate-700 leading-[2] whitespace-pre-wrap font-medium pl-2">
+                  {currentTopic.desc || "議題描述尚未輸入。"}
+                </div>
+              </div>
 
               <div className="bg-slate-50 rounded-[48px] p-2 overflow-hidden border border-slate-200 shadow-sm">
                 <div className="px-8 lg:px-10 py-6 flex items-center justify-between border-b border-slate-100">
