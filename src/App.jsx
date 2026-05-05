@@ -22,6 +22,9 @@ import {
   ChevronDown,
   Menu,
   Check,
+  Home,
+  List,
+  FileText
 } from "lucide-react";
 
 const THEME = {
@@ -136,7 +139,7 @@ const App = () => {
 
   useEffect(() => {
     const handleResize = () => {
-      const sidebarWidth = isSidebarOpen ? 320 : 0;
+      const sidebarWidth = isSidebarOpen ? 320 : 88;
       const notesWidth = isNotesOpen ? 460 : 0;
       const availableWidth = window.innerWidth - sidebarWidth - notesWidth;
       setScaleValue(Math.min(1, availableWidth / 1440));
@@ -474,13 +477,13 @@ const App = () => {
           display: "none",
         }}
       >
-        <div className="bg-[#0A0F1C] p-16 text-white flex justify-between items-end border-b-8 border-[#B89F5D]">
+        <div className="bg-[#0A0F1C] px-24 py-16 text-white flex justify-between items-end border-b-[16px] border-[#B89F5D]">
           <div>
             <div className="text-sm font-black text-[#B89F5D] tracking-[0.4em] uppercase mb-4">
               Strategic Topic Record
             </div>
             <h1
-              className="font-bold max-w-3xl leading-tight whitespace-pre-wrap"
+              className="font-black max-w-3xl leading-tight whitespace-pre-wrap"
               style={
                 config.cover?.titleFontSize
                   ? { fontSize: `${config.cover.titleFontSize * 0.6}px` }
@@ -498,6 +501,7 @@ const App = () => {
         </div>
 
         <div className="px-24 py-20">
+          {/* Metadata */}
           <div className="flex items-center gap-4 mb-8">
             <span className="text-lg font-black tracking-widest uppercase text-slate-400 bg-slate-100 px-6 py-2 rounded-full">
               {t.id}
@@ -515,56 +519,63 @@ const App = () => {
             </span>
           </div>
 
-          <h2 className="text-[56px] font-black text-slate-900 leading-[1.2] tracking-tight mb-10">
+          {/* Title */}
+          <h2 className="text-[56px] font-black text-slate-900 leading-[1.2] tracking-tight mb-16">
             {t.title}
           </h2>
+
+          {/* Context / Description */}
           {t.desc && (
-            <div className="bg-slate-50 rounded-[32px] p-10 border border-slate-200 mb-16 relative">
-              <div className="absolute left-0 top-10 bottom-10 w-2 rounded-r-full bg-[#B89F5D]" />
-              <div className="flex items-center gap-3 mb-5 opacity-60">
+            <div className="mb-20">
+              <div className="flex items-center gap-3 mb-6 opacity-40">
                 <Layout className="w-6 h-6" />
-                <span className="text-sm font-black tracking-widest uppercase">Context & Description</span>
+                <span className="text-[14px] font-black tracking-[0.2em] uppercase">Context & Description</span>
               </div>
-              <div className="text-[24px] text-slate-700 leading-[2] whitespace-pre-wrap font-medium pl-2">
-                {t.desc}
+              <div className="border-l-[6px] border-[#B89F5D] bg-slate-50 rounded-r-3xl p-10 shadow-sm">
+                <div className="text-[24px] text-slate-700 leading-[2] whitespace-pre-wrap font-medium">
+                  {t.desc}
+                </div>
               </div>
             </div>
           )}
 
+          {/* Decision & Action Items */}
           {t.notes && t.notes.trim() !== "" && (
-            <div className="bg-[#FDF9F0] rounded-[40px] p-16 border border-[#B89F5D]/20 shadow-sm relative overflow-hidden mb-16">
-              <div className="absolute top-0 left-0 bottom-0 w-3 bg-[#B89F5D]" />
-              <div className="flex items-center gap-4 mb-8">
-                <Edit3 className="w-8 h-8 text-[#B89F5D]" />
-                <span className="text-xl font-black text-[#B89F5D] tracking-widest uppercase">
+            <div className="bg-[#0F172A] rounded-[40px] p-16 shadow-lg mb-20 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-[80px] pointer-events-none" />
+              <div className="flex items-center gap-4 mb-10 border-b border-white/10 pb-6">
+                <Edit3 className="w-8 h-8 text-[#FCEBAF]" />
+                <span className="text-[22px] font-black text-[#FCEBAF] tracking-widest uppercase">
                   Decision & Action Items
                 </span>
               </div>
-              <div className="text-[28px] text-slate-800 leading-[1.8] font-medium whitespace-pre-wrap ml-4">
+              <div className="text-[26px] text-slate-100 leading-[2] font-medium whitespace-pre-wrap">
                 {t.notes}
               </div>
             </div>
           )}
 
+          {/* Attached Visuals */}
           {exportImgs.length > 0 && (
-            <div className="mt-20 pt-16 border-t-2 border-dashed border-slate-200">
-              <div className="flex items-center gap-5 mb-12">
+            <div className="mt-24 pt-20 border-t-2 border-dashed border-slate-200">
+              <div className="flex items-center gap-5 mb-16">
                 <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center">
                   <ImageIcon className="w-8 h-8 text-slate-500" />
                 </div>
                 <div>
                   <h3 className="text-[28px] font-black text-slate-800 tracking-widest uppercase">Attached Visuals</h3>
-                  <p className="text-xl text-slate-400 font-medium mt-1">議題相關視覺參考圖檔</p>
+                  <p className="text-xl text-slate-400 font-medium mt-2">會議相關視覺參考圖檔</p>
                 </div>
               </div>
-              <div className="space-y-16">
+              
+              <div className="space-y-20 bg-slate-50 p-12 rounded-[48px] border border-slate-100">
                 {exportImgs.map((img, imgIdx) => (
                   <div
                     key={imgIdx}
-                    className="bg-white rounded-[40px] p-8 border border-slate-200 shadow-sm relative"
+                    className="bg-white rounded-[40px] p-8 border border-slate-200 shadow-sm relative flex flex-col items-center"
                   >
                     {exportImgs.length > 1 && (
-                      <div className="absolute -top-5 left-1/2 -translate-x-1/2 px-6 py-2 bg-slate-800 text-white text-sm font-bold rounded-full tracking-widest shadow-md">
+                      <div className="absolute -top-5 left-1/2 -translate-x-1/2 px-8 py-2 bg-slate-800 text-white text-sm font-bold rounded-full tracking-widest shadow-md">
                         IMAGE {imgIdx + 1}
                       </div>
                     )}
@@ -581,8 +592,9 @@ const App = () => {
           )}
         </div>
 
-        <div className="text-center pb-12 pt-12 text-slate-400 border-t border-slate-100 mx-24">
-          <div className="text-sm font-black tracking-[0.3em] uppercase opacity-50">
+        <div className="text-center pb-12 pt-20 text-slate-400 mx-24 flex flex-col items-center gap-4">
+          <div className="w-12 h-1 bg-slate-200 rounded-full" />
+          <div className="text-xs font-black tracking-[0.4em] uppercase opacity-40">
             Generated by Strategic Navigator
           </div>
         </div>
@@ -604,7 +616,7 @@ const App = () => {
           display: "none",
         }}
       >
-        <div className="bg-[#0A0F1C] p-16 text-white flex justify-between items-end border-b-8 border-[#338F88]">
+        <div className="bg-[#0A0F1C] px-24 py-16 text-white flex justify-between items-end border-b-[16px] border-[#338F88]">
           <div>
             <div className="text-sm font-black text-[#338F88] tracking-[0.4em] uppercase mb-4">
               Executive Summary Notes
@@ -679,7 +691,8 @@ const App = () => {
           </div>
         </div>
 
-        <div className="text-center pb-12 pt-12 text-slate-400 border-t border-slate-100 mx-24">
+        <div className="text-center pb-12 pt-20 text-slate-400 mx-24 flex flex-col items-center gap-4 border-t border-slate-100">
+           <div className="w-12 h-1 bg-slate-200 rounded-full" />
           <div className="text-sm font-black tracking-[0.3em] uppercase opacity-50">
             Generated by Strategic Navigator
           </div>
@@ -726,26 +739,26 @@ const App = () => {
       `}</style>
 
       <aside
-        className={`bg-[#0A0F1C] border-r border-slate-800 flex flex-col z-40 relative transition-all duration-300 ease-in-out overflow-hidden ${
-          isSidebarOpen
-            ? "w-[320px] translate-x-0"
-            : "w-0 -translate-x-full border-none"
+        className={`bg-[#0A0F1C] border-r border-slate-800 flex flex-col z-40 relative transition-all duration-500 ease-in-out overflow-hidden shrink-0 ${
+          isSidebarOpen ? "w-[320px]" : "w-[88px]"
         }`}
       >
-        <div className="p-6 flex-1 overflow-y-auto custom-scrollbar-dark w-[320px]">
-          <div className="flex items-center gap-3 mb-8 px-2 text-[#B89F5D]">
-            <div className="w-5 h-5 bg-[#B89F5D] rounded-sm rotate-45" />
-            <h1 className="font-bold tracking-[0.2em] text-[10px] uppercase">
+        <div className="py-6 flex-1 overflow-y-auto custom-scrollbar-dark flex flex-col items-center">
+          {/* Logo Area */}
+          <div className={`flex items-center mb-8 text-[#B89F5D] ${isSidebarOpen ? 'w-full px-8 gap-3 justify-start' : 'justify-center'}`}>
+            <div className="w-5 h-5 bg-[#B89F5D] rounded-sm rotate-45 shrink-0" />
+            <h1 className={`font-bold tracking-[0.2em] text-[10px] uppercase whitespace-nowrap transition-all duration-300 ${isSidebarOpen ? 'opacity-100 w-auto' : 'opacity-0 w-0 hidden'}`}>
               Strategic Navigator
             </h1>
           </div>
 
-          <div className="px-2 mb-8">
-            <div className="bg-white/5 border border-white/10 rounded-xl p-3 flex flex-col items-center justify-center">
-              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">
+          {/* Time Area */}
+          <div className={`mb-8 transition-all duration-300 ${isSidebarOpen ? 'w-full px-6' : 'w-full px-3'}`}>
+            <div className={`bg-white/5 border border-white/10 rounded-xl flex flex-col items-center justify-center ${isSidebarOpen ? 'p-3' : 'py-3'}`}>
+              <span className={`text-[10px] text-slate-500 font-bold uppercase tracking-widest transition-all duration-300 ${isSidebarOpen ? 'mb-1 block' : 'hidden'}`}>
                 Current Time
               </span>
-              <span className="text-lg font-mono font-bold text-slate-200 tracking-wider">
+              <span className={`font-mono font-bold text-slate-200 tracking-wider transition-all duration-300 ${isSidebarOpen ? 'text-lg' : 'text-sm'}`}>
                 {currentTime.toLocaleTimeString("zh-TW", {
                   hour: "2-digit",
                   minute: "2-digit",
@@ -755,91 +768,123 @@ const App = () => {
             </div>
           </div>
 
-          <nav className="space-y-2 flex flex-col min-h-[calc(100vh-250px)]">
-            <div>
+          <nav className="w-full flex flex-col min-h-[calc(100vh-250px)]">
+            <div className="px-3 space-y-2">
+              {/* Home Menu */}
               <button
                 onClick={() => setActivePage("cover")}
-                className={`w-full px-4 py-3.5 rounded-2xl text-[15px] font-bold flex items-center transition-all ${
+                title={!isSidebarOpen ? "會議首頁" : ""}
+                className={`w-full rounded-2xl font-bold flex items-center transition-all ${
+                  isSidebarOpen ? "px-4 py-3.5 text-[15px] justify-start" : "p-3.5 justify-center"
+                } ${
                   activePage === "cover"
                     ? "bg-white/10 text-[#B89F5D]"
                     : "text-slate-400 hover:text-white hover:bg-white/5"
                 }`}
               >
-                會議首頁
+                {!isSidebarOpen ? <Home className="w-5 h-5" /> : "會議首頁"}
               </button>
+
+              {/* Agenda Menu */}
               <button
                 onClick={() => setActivePage("agenda")}
-                className={`w-full px-4 py-3.5 mt-1 rounded-2xl text-[15px] font-bold flex items-center transition-all ${
+                title={!isSidebarOpen ? "議程目錄" : ""}
+                className={`w-full mt-1 rounded-2xl font-bold flex items-center transition-all ${
+                   isSidebarOpen ? "px-4 py-3.5 text-[15px] justify-start" : "p-3.5 justify-center"
+                } ${
                   activePage === "agenda"
                     ? "bg-white/10 text-[#B89F5D]"
                     : "text-slate-400 hover:text-white hover:bg-white/5"
                 }`}
               >
-                議程目錄
+                {!isSidebarOpen ? <List className="w-5 h-5" /> : "議程目錄"}
               </button>
             </div>
 
-            <div className="py-6 flex-1">
-              <p className="px-4 text-xs font-black text-slate-500 uppercase tracking-widest mb-4">
-                議題進度清單
+            <div className={`py-6 flex-1 flex flex-col ${isSidebarOpen ? "px-3" : "items-center px-0"}`}>
+              <p className={`text-xs font-black text-slate-500 uppercase tracking-widest mb-4 transition-all duration-300 ${isSidebarOpen ? "px-4 block text-left" : "text-[8px] px-0 text-center scale-90 opacity-50"}`}>
+                {isSidebarOpen ? "議題進度清單" : "TOPICS"}
               </p>
-              {config.topics?.map((t, idx) => (
-                <div
-                  key={t.id}
-                  onClick={() => setActivePage(t.id)}
-                  className={`w-full px-4 py-3 rounded-xl text-[15px] font-bold flex items-center gap-3 transition-all mb-1 group cursor-pointer ${
-                    activePage === t.id
-                      ? "bg-white/10 text-[#B89F5D]"
-                      : "text-slate-400 hover:text-white hover:bg-white/5"
-                  }`}
-                >
+              
+              <div className={`w-full flex flex-col space-y-1 ${!isSidebarOpen && "items-center"}`}>
+                {config.topics?.map((t, idx) => (
                   <div
-                    className={`w-1.5 h-1.5 rounded-full transition-transform group-hover:scale-150 shrink-0`}
-                    style={{
-                      backgroundColor:
-                        t.status === "resolved" ? "#338F88" : "#B89F5D",
-                    }}
-                  />
-                  <span className="truncate flex-1 text-left select-none">
-                    {t.title}
-                  </span>
-
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      updateTopic(
-                        t.id,
-                        "status",
-                        t.status === "resolved" ? "discussing" : "resolved"
-                      );
-                    }}
-                    className="p-1.5 rounded-md hover:bg-white/20 transition-colors shrink-0 flex items-center justify-center"
-                    title={
-                      t.status === "resolved"
-                        ? "切換回討論中"
-                        : "快速標記為已決議"
-                    }
+                    key={t.id}
+                    onClick={() => setActivePage(t.id)}
+                    title={!isSidebarOpen ? t.title : ""}
+                    className={`group cursor-pointer rounded-xl font-bold flex items-center transition-all ${
+                      isSidebarOpen ? "w-full px-4 py-3 gap-3 text-[15px] justify-start" : "w-11 h-11 justify-center relative my-1"
+                    } ${
+                      activePage === t.id
+                        ? isSidebarOpen ? "bg-white/10 text-[#B89F5D]" : "bg-white/10 text-[#B89F5D] ring-1 ring-[#B89F5D]"
+                        : "text-slate-400 hover:text-white hover:bg-white/5"
+                    }`}
                   >
-                    {t.status === "resolved" ? (
-                      <CheckCircle className="w-4 h-4 text-[#338F88]" />
+                    {isSidebarOpen ? (
+                      <>
+                        <div
+                          className={`w-1.5 h-1.5 rounded-full transition-transform group-hover:scale-150 shrink-0`}
+                          style={{
+                            backgroundColor:
+                              t.status === "resolved" ? "#338F88" : "#B89F5D",
+                          }}
+                        />
+                        <span className="truncate flex-1 text-left select-none">
+                          {t.title}
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateTopic(
+                              t.id,
+                              "status",
+                              t.status === "resolved" ? "discussing" : "resolved"
+                            );
+                          }}
+                          className="p-1.5 rounded-md hover:bg-white/20 transition-colors shrink-0 flex items-center justify-center"
+                          title={
+                            t.status === "resolved"
+                              ? "切換回討論中"
+                              : "快速標記為已決議"
+                          }
+                        >
+                          {t.status === "resolved" ? (
+                            <CheckCircle className="w-4 h-4 text-[#338F88]" />
+                          ) : (
+                            <CheckCircle className="w-4 h-4 opacity-0 group-hover:opacity-40 transition-opacity" />
+                          )}
+                        </button>
+                      </>
                     ) : (
-                      <CheckCircle className="w-4 h-4 opacity-0 group-hover:opacity-40 transition-opacity" />
+                      <>
+                        <span className="text-[13px] font-mono tracking-tighter z-10">{String(idx + 1).padStart(2, '0')}</span>
+                        {/* Status indicator dot when collapsed */}
+                        <div 
+                          className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full z-20"
+                          style={{
+                            backgroundColor: t.status === "resolved" ? "#338F88" : "transparent",
+                          }}
+                        />
+                      </>
                     )}
-                  </button>
-                </div>
-              ))}
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <div className="pt-2 mt-2 border-t border-slate-800/50">
+            <div className={`pt-4 mt-2 border-t border-slate-800/50 ${isSidebarOpen ? "px-3" : "px-3"}`}>
               <button
                 onClick={() => setActivePage("summary")}
-                className={`w-full px-4 py-3.5 rounded-2xl text-[15px] font-bold flex items-center transition-all ${
+                title={!isSidebarOpen ? "筆記總覽" : ""}
+                className={`w-full rounded-2xl font-bold flex items-center transition-all ${
+                   isSidebarOpen ? "px-4 py-3.5 text-[15px] justify-start" : "p-3.5 justify-center"
+                } ${
                   activePage === "summary"
                     ? "bg-white/10 text-[#B89F5D]"
                     : "text-slate-400 hover:text-white hover:bg-white/5"
                 }`}
               >
-                📝 筆記總覽
+                {!isSidebarOpen ? <FileText className="w-5 h-5 text-[#B89F5D] opacity-80" /> : "📝 筆記總覽"}
               </button>
             </div>
           </nav>
@@ -854,10 +899,10 @@ const App = () => {
       >
         <button
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className={`fixed top-8 z-50 w-11 h-11 bg-white/90 backdrop-blur-md shadow-sm rounded-xl flex items-center justify-center border border-slate-200 hover:bg-slate-50 transition-all duration-300 ease-in-out group ${
-            isSidebarOpen ? "left-[344px]" : "left-8"
+          className={`fixed top-8 z-50 w-11 h-11 bg-white/90 backdrop-blur-md shadow-sm rounded-xl flex items-center justify-center border border-slate-200 hover:bg-slate-50 transition-all duration-500 ease-in-out group ${
+            isSidebarOpen ? "left-[344px]" : "left-[112px]"
           }`}
-          title={isSidebarOpen ? "收起側欄 (簡報模式)" : "展開側欄"}
+          title={isSidebarOpen ? "收起側欄" : "展開側欄"}
         >
           <Menu className="w-5 h-5 text-slate-500 group-hover:text-slate-800" />
         </button>
@@ -901,12 +946,14 @@ const App = () => {
               </button>
             </div>
           )}
-          <button
-            onClick={openConfig}
-            className="w-12 h-12 bg-white/90 backdrop-blur-md shadow-sm rounded-2xl flex items-center justify-center border border-slate-200 hover:border-[#338F88] transition-all"
-          >
-            <Settings className="w-5 h-5 text-slate-600" />
-          </button>
+          {activePage !== "cover" && (
+            <button
+              onClick={openConfig}
+              className="w-12 h-12 bg-white/90 backdrop-blur-md shadow-sm rounded-2xl flex items-center justify-center border border-slate-200 hover:border-[#338F88] transition-all"
+            >
+              <Settings className="w-5 h-5 text-slate-600" />
+            </button>
+          )}
         </div>
 
         <div className="flex-1">
@@ -1239,6 +1286,7 @@ const App = () => {
                 isNotesOpen ? "max-w-[800px]" : "max-w-[1200px]"
               }`}
             >
+              {/* Toolbar */}
               <div className="flex items-center justify-between mb-16">
                 <span className="px-5 py-2 rounded-full bg-slate-50 border border-slate-100 text-[11px] font-black text-slate-400 tracking-widest uppercase">
                   {currentTopic.id}
@@ -1290,64 +1338,67 @@ const App = () => {
                 </div>
               </div>
 
-              <h2 className="text-3xl md:text-[40px] lg:text-[48px] font-black text-slate-900 mb-10 leading-[1.2] tracking-tight">
-                <span className="relative inline-block px-2">
-                  <span className="absolute bottom-[10%] left-[-2%] w-[104%] h-[40%] bg-[#FCEBAF] rounded-sm transform -rotate-1 z-0 shadow-[0_4px_12px_rgba(252,235,175,0.4)]"></span>
-                  <span className="relative z-10">{currentTopic.title}</span>
-                </span>
+              {/* Title Section */}
+              <h2 className="text-[40px] md:text-[48px] font-black text-slate-900 mb-12 leading-[1.2] tracking-tight">
+                {currentTopic.title}
               </h2>
 
-              <div className="bg-slate-50 rounded-[32px] p-8 md:p-10 border border-slate-200 mb-16 relative">
-                <div className="absolute left-0 top-8 bottom-8 w-1.5 rounded-r-full bg-[#B89F5D]" />
-                <div className="flex items-center gap-2 mb-4 opacity-50 pl-2">
-                  <Layout className="w-5 h-5" />
-                  <span className="text-xs font-black tracking-widest uppercase">Context & Description</span>
+              {/* Context Block - Redesigned to be a distinct container */}
+              {currentTopic.desc && (
+                <div className="mb-20">
+                  <div className="flex items-center gap-3 mb-4 opacity-40">
+                    <Layout className="w-5 h-5" />
+                    <span className="text-xs font-black tracking-widest uppercase">Context & Description</span>
+                  </div>
+                  <div className="border-l-4 border-[#B89F5D] bg-slate-50 rounded-r-2xl p-8 md:p-10 shadow-sm transition-all hover:bg-slate-100">
+                    <div className="text-[18px] md:text-[20px] text-slate-700 leading-[2] whitespace-pre-wrap font-medium">
+                      {currentTopic.desc}
+                    </div>
+                  </div>
                 </div>
-                <div className="text-[17px] md:text-[20px] text-slate-700 leading-[2] whitespace-pre-wrap font-medium pl-2">
-                  {currentTopic.desc || "議題描述尚未輸入。"}
-                </div>
-              </div>
+              )}
 
-              <div className="bg-slate-50 rounded-[48px] p-2 overflow-hidden border border-slate-200 shadow-sm">
-                <div className="px-8 lg:px-10 py-6 flex items-center justify-between border-b border-slate-100">
+              {/* Visual Assets Block - Redesigned to separate content properly */}
+              <div className="bg-slate-50 rounded-[48px] p-2 overflow-hidden border border-slate-200 shadow-sm mb-20">
+                <div className="px-8 lg:px-10 py-6 flex flex-wrap items-center justify-between border-b border-slate-200/50 gap-4">
                   <div className="flex items-center gap-2">
-                    <Layout className="w-5 h-5 text-slate-400" />
+                    <ImageIcon className="w-5 h-5 text-slate-400" />
                     <span className="text-xs font-black text-slate-400 tracking-widest uppercase">
                       Visual Assets & Collaboration
                     </span>
                   </div>
-                  <div className="flex gap-2.5">
-                    {currentTopic.systems?.map((s, i) => (
-                      <a
-                        key={i}
-                        href={s.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="px-3.5 py-1.5 bg-white border border-slate-200 rounded-lg text-[13px] font-bold text-slate-600 hover:border-[#338F88] hover:text-[#338F88] transition-all flex items-center gap-1.5 shadow-sm"
-                      >
-                        {s.name} <ExternalLink className="w-3.5 h-3.5" />
-                      </a>
-                    ))}
-                  </div>
+                  {currentTopic.systems?.length > 0 && (
+                    <div className="flex flex-wrap gap-2.5">
+                      {currentTopic.systems.map((s, i) => (
+                        <a
+                          key={i}
+                          href={s.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-3.5 py-1.5 bg-white border border-slate-200 rounded-lg text-[13px] font-bold text-slate-600 hover:border-[#338F88] hover:text-[#338F88] transition-all flex items-center gap-1.5 shadow-sm"
+                        >
+                          {s.name} <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
-                <div className="min-h-[500px] bg-white rounded-[40px] flex flex-col items-center justify-center p-8 lg:p-10 gap-16 relative">
+                <div className="min-h-[400px] bg-white rounded-[40px] flex flex-col items-center justify-center p-8 lg:p-12 gap-16 relative">
                   {currentTopicImages.length > 0 ? (
                     currentTopicImages.map((img, i) => (
                       <div
                         key={i}
-                        className="w-full flex flex-col items-center group relative"
+                        className="w-full flex flex-col items-center group relative bg-slate-50 rounded-[32px] p-6 border border-slate-100 shadow-sm"
                       >
-                        {currentTopicImages.length > 1 && i > 0 && (
-                          <div className="w-full max-w-md h-px bg-slate-100 mb-16 relative flex justify-center">
-                            <span className="absolute -top-3 bg-white px-4 text-[10px] font-bold text-slate-300 tracking-widest uppercase">
-                              IMAGE {i + 1}
-                            </span>
+                        {currentTopicImages.length > 1 && (
+                          <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#0F172A] text-white px-5 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase shadow-md">
+                            IMAGE {i + 1}
                           </div>
                         )}
                         <img
                           src={img}
-                          className="max-w-full max-h-[800px] object-contain rounded-2xl shadow-md cursor-zoom-in hover:scale-[1.01] transition-transform border border-slate-100"
+                          className="max-w-full max-h-[800px] object-contain rounded-2xl cursor-zoom-in hover:scale-[1.01] transition-transform"
                           onClick={() => setFullscreenImg(img)}
                           alt={`Topic img ${i + 1}`}
                         />
@@ -1355,14 +1406,15 @@ const App = () => {
                     ))
                   ) : (
                     <div className="flex flex-col items-center text-slate-300 font-medium text-sm gap-4 text-center">
-                      <ImageIcon className="w-16 h-16 opacity-40" />
+                      <ImageIcon className="w-16 h-16 opacity-30" />
                       <span>尚未上傳議題視覺圖檔</span>
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className="mt-20 flex justify-center items-center gap-8">
+              {/* Navigation Footer */}
+              <div className="mt-20 pt-10 border-t border-slate-100 flex justify-center items-center gap-8">
                 <button
                   onClick={() => {
                     const idx = config.topics.findIndex(
@@ -1375,7 +1427,7 @@ const App = () => {
                 >
                   {config.topics.findIndex((t) => t.id === currentTopic.id) === 0
                     ? "← 回議程目錄"
-                    : "上一個議題"}
+                    : "← 上一個議題"}
                 </button>
 
                 <button
