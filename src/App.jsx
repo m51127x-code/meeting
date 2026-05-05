@@ -71,7 +71,6 @@ const QUICK_TAGS = [
 ];
 
 const App = () => {
-  // 自動從 sessionStorage 讀取暫存
   const [config, setConfig] = useState(() => {
     try {
       const savedData = sessionStorage.getItem("strategyMeetingData");
@@ -82,7 +81,6 @@ const App = () => {
     return INITIAL_CLEAN_CONFIG;
   });
 
-  // 只要 config 有任何改變，就即時寫入暫存
   useEffect(() => {
     sessionStorage.setItem("strategyMeetingData", JSON.stringify(config));
   }, [config]);
@@ -168,14 +166,12 @@ const App = () => {
     });
   }, []);
 
-  // 儲存動效
   useEffect(() => {
     setIsSaving(true);
     const timer = setTimeout(() => setIsSaving(false), 800);
     return () => clearTimeout(timer);
   }, [config]);
 
-  // 控制台功能
   const openConfig = () => {
     setTempConfig(JSON.parse(JSON.stringify(config)));
     setIsConfigOpen(true);
@@ -454,7 +450,6 @@ const App = () => {
       ? [currentTopic.previewContent]
       : [];
 
-  // 智慧預覽機制
   const displayConfig = isConfigOpen && tempConfig ? tempConfig : config;
 
   const renderSingleTopicExport = (t) => {
@@ -524,7 +519,7 @@ const App = () => {
             {t.title}
           </h2>
           {t.desc && (
-            <p className="text-2xl text-slate-500 leading-relaxed max-w-5xl mb-16">
+            <p className="text-2xl text-slate-500 leading-relaxed max-w-5xl mb-16 whitespace-pre-wrap">
               {t.desc}
             </p>
           )}
@@ -815,7 +810,6 @@ const App = () => {
               ))}
             </div>
 
-            {/* 把筆記總覽移到所有議題的最下方，作為會議的總結 */}
             <div className="pt-2 mt-2 border-t border-slate-800/50">
               <button
                 onClick={() => setActivePage("summary")}
@@ -913,7 +907,9 @@ const App = () => {
                   <h1
                     className="font-bold mb-6 xl:mb-8 tracking-tight leading-[1.2] drop-shadow-lg break-words whitespace-pre-wrap transition-all duration-300 ease-out"
                     style={{
-                      fontSize: `clamp(32px, ${displayConfig.cover?.titleFontSize || 80}px, 8vw)`,
+                      fontSize: `clamp(32px, ${
+                        displayConfig.cover?.titleFontSize || 80
+                      }px, 8vw)`,
                     }}
                   >
                     {displayConfig.cover?.title || "未命名會議"}{" "}
@@ -1017,7 +1013,7 @@ const App = () => {
                 </span>
               </div>
 
-              <h2 className="text-4xl md:text-5xl lg:text-[64px] font-bold text-slate-900 mb-12 lg:mb-16 leading-tight tracking-tight">
+              <h2 className="text-4xl md:text-[56px] lg:text-[64px] font-black text-slate-900 mb-12 lg:mb-16 leading-tight tracking-tighter">
                 議程目錄
               </h2>
 
@@ -1027,21 +1023,21 @@ const App = () => {
                     <div
                       key={t.id}
                       onClick={() => setActivePage(t.id)}
-                      className="group p-8 bg-white border border-slate-200 rounded-[32px] hover:border-[#338F88] hover:shadow-2xl transition-all duration-300 cursor-pointer flex flex-col md:flex-row gap-6 md:items-center relative overflow-hidden"
+                      className="group p-10 md:p-12 bg-white border border-slate-200 rounded-[32px] hover:border-[#338F88] hover:shadow-2xl transition-all duration-300 cursor-pointer flex flex-col md:flex-row gap-8 md:items-start relative overflow-hidden"
                     >
                       <div className="absolute left-0 top-0 bottom-0 w-2 bg-transparent group-hover:bg-[#338F88] transition-colors" />
 
-                      <div className="text-6xl font-black text-slate-100 group-hover:text-[#338F88]/10 transition-colors w-24 shrink-0 font-mono tracking-tighter">
+                      <div className="text-[80px] leading-none font-black text-slate-100 group-hover:text-[#338F88]/10 transition-colors w-24 shrink-0 font-mono tracking-tighter">
                         {String(idx + 1).padStart(2, "0")}
                       </div>
 
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <span className="text-xs font-bold text-[#B89F5D] tracking-widest uppercase">
+                      <div className="flex-1 mt-2">
+                        <div className="flex items-center gap-4 mb-5">
+                          <span className="text-sm font-bold text-[#B89F5D] tracking-widest uppercase">
                             {t.id}
                           </span>
                           <span
-                            className={`px-2.5 py-1 rounded-md text-[10px] font-bold ${
+                            className={`px-3 py-1.5 rounded-md text-[11px] font-bold ${
                               t.status === "resolved"
                                 ? "bg-[#338F88]/10 text-[#338F88]"
                                 : "bg-slate-100 text-slate-500"
@@ -1050,15 +1046,15 @@ const App = () => {
                             {t.status === "resolved" ? "已決議" : "討論中"}
                           </span>
                         </div>
-                        <h3 className="text-3xl font-bold text-slate-800 mb-3 group-hover:text-[#338F88] transition-colors leading-tight">
+                        <h3 className="text-3xl md:text-[36px] font-bold text-slate-900 mb-5 group-hover:text-[#338F88] transition-colors leading-[1.2] tracking-tight">
                           {t.title}
                         </h3>
-                        <p className="text-slate-500 font-medium line-clamp-2 leading-relaxed">
+                        <p className="text-[16px] text-slate-600 font-medium whitespace-pre-wrap leading-[1.8] max-w-3xl opacity-90">
                           {t.desc || "無議題描述"}
                         </p>
                       </div>
 
-                      <div className="shrink-0 mt-4 md:mt-0 flex items-center gap-4">
+                      <div className="shrink-0 mt-4 md:mt-4 flex items-center gap-4">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -1068,7 +1064,7 @@ const App = () => {
                                 : [...prev, t.id]
                             );
                           }}
-                          className={`w-8 h-8 rounded-[10px] border-2 flex items-center justify-center transition-all shadow-sm ${
+                          className={`w-9 h-9 rounded-[10px] border-2 flex items-center justify-center transition-all shadow-sm ${
                             selectedTopics.includes(t.id)
                               ? "bg-[#338F88] border-[#338F88] text-white"
                               : "bg-white border-slate-200 text-transparent hover:border-[#338F88]/50 hover:bg-[#FDF9F0]"
@@ -1131,7 +1127,6 @@ const App = () => {
             </div>
           )}
 
-          {/* 🌟 重新設計：精品雜誌感時間軸筆記總覽 */}
           {activePage === "summary" && (
             <div className="min-h-screen p-8 md:p-12 lg:p-16 mx-auto w-full max-w-[900px] transition-all flex flex-col pb-32 animate-in fade-in duration-500">
               <div className="flex items-center justify-between mb-10 border-b border-slate-100 pb-8">
@@ -1167,7 +1162,6 @@ const App = () => {
               <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm p-8 md:p-12">
                 {config.topics?.length > 0 ? (
                   <div className="space-y-10 relative">
-                    {/* 背景垂直細線 */}
                     <div className="absolute left-[11px] top-4 bottom-4 w-px bg-slate-100" />
                     
                     {config.topics.map((t, idx) => (
@@ -1176,7 +1170,6 @@ const App = () => {
                         onClick={() => setActivePage(t.id)}
                         className="relative pl-10 group cursor-pointer"
                       >
-                        {/* 時間軸節點 */}
                         <div className="absolute left-[4px] top-1.5 w-4 h-4 rounded-full bg-white border-2 border-slate-200 group-hover:border-[#338F88] transition-colors flex items-center justify-center z-10">
                            <div className={`w-1.5 h-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity ${t.status === 'resolved' ? 'bg-[#338F88]' : 'bg-[#B89F5D]'}`} />
                         </div>
@@ -1197,7 +1190,6 @@ const App = () => {
                             </span>
                           </div>
                           
-                          {/* 筆記內容區塊 */}
                           <div className="bg-slate-50/80 rounded-2xl p-5 border border-slate-100 group-hover:border-[#338F88]/30 group-hover:bg-[#FDFDFD] transition-all text-[15px] leading-[1.8] text-slate-700 whitespace-pre-wrap font-medium">
                             {t.notes && t.notes.trim() !== "" ? (
                               t.notes
@@ -1221,13 +1213,13 @@ const App = () => {
             </div>
           )}
 
-          {currentTopic && activePage !== "summary" && (
+          {currentTopic && activePage !== "summary" && activePage !== "agenda" && activePage !== "cover" && (
             <div
               className={`p-8 md:p-12 lg:p-20 mx-auto w-full pb-48 transition-all ${
                 isNotesOpen ? "max-w-[800px]" : "max-w-[1200px]"
               }`}
             >
-              <div className="flex items-center justify-between mb-12">
+              <div className="flex items-center justify-between mb-16">
                 <span className="px-5 py-2 rounded-full bg-slate-50 border border-slate-100 text-[11px] font-black text-slate-400 tracking-widest uppercase">
                   {currentTopic.id}
                 </span>
@@ -1278,14 +1270,14 @@ const App = () => {
                 </div>
               </div>
 
-              <h2 className="text-4xl md:text-5xl lg:text-[64px] font-bold text-slate-900 mb-10 leading-tight tracking-tight">
-                <span className="relative inline-block px-1">
-                  <span className="absolute bottom-[10%] left-[-2%] w-[104%] h-[45%] bg-[#FCEBAF] rounded-sm transform -rotate-1 z-0 shadow-[0_4px_12px_rgba(252,235,175,0.4)]"></span>
+              <h2 className="text-[40px] md:text-[56px] lg:text-[72px] font-black text-slate-900 mb-12 leading-[1.1] tracking-tighter">
+                <span className="relative inline-block px-2">
+                  <span className="absolute bottom-[10%] left-[-2%] w-[104%] h-[40%] bg-[#FCEBAF] rounded-sm transform -rotate-1 z-0 shadow-[0_4px_12px_rgba(252,235,175,0.4)]"></span>
                   <span className="relative z-10">{currentTopic.title}</span>
                 </span>
               </h2>
 
-              <p className="text-xl text-slate-600 mb-16 max-w-4xl leading-[1.8] whitespace-pre-wrap font-medium">
+              <p className="text-[18px] md:text-[22px] text-slate-600 mb-20 max-w-4xl leading-[1.9] whitespace-pre-wrap font-normal tracking-[0.02em]">
                 {currentTopic.desc || "議題描述尚未輸入。"}
               </p>
 
@@ -1471,7 +1463,6 @@ const App = () => {
         </button>
       )}
 
-      {/* 恢復原版滑出抽屜的架構，確保動畫流暢 */}
       <div
         className={`fixed inset-y-0 right-0 w-[460px] bg-white border-l border-slate-100 shadow-2xl z-[200] transition-all duration-500 ${
           isConfigOpen ? "translate-x-0" : "translate-x-full"
@@ -1654,14 +1645,14 @@ const App = () => {
                           placeholder="議題名稱"
                         />
                         <textarea
-                          className="w-full p-3.5 bg-white border border-slate-200 rounded-xl text-sm outline-none h-24 focus:border-[#338F88] resize-none"
+                          className="w-full p-4 bg-white border border-slate-200 rounded-xl text-[15px] leading-relaxed outline-none h-32 focus:border-[#338F88] resize-none"
                           value={t.desc}
                           onChange={(e) => {
                             const next = [...tempConfig.topics];
                             next[tidx].desc = e.target.value;
                             setTempConfig({ ...tempConfig, topics: next });
                           }}
-                          placeholder="描述背景..."
+                          placeholder="描述背景或細節..."
                         />
 
                         <div className="pt-2 flex flex-wrap items-center gap-3">
