@@ -40,7 +40,7 @@ const FONT_FAMILY =
   '"Noto Sans TC", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif';
 
 const INITIAL_CLEAN_CONFIG = {
-  cover: { title: "", desc: "", titleFontSize: 80 },
+  cover: { title: "", desc: "", titleFontSize: 64 },
   attendees: "",
   topics: [],
   sessionDate: "",
@@ -484,11 +484,9 @@ const App = () => {
             </div>
             <h1
               className="font-black max-w-3xl leading-tight whitespace-pre-wrap"
-              style={
-                config.cover?.titleFontSize
-                  ? { fontSize: `${config.cover.titleFontSize * 0.6}px` }
-                  : {}
-              }
+              style={{
+                fontSize: displayConfig.cover?.titleFontSize ? `${displayConfig.cover.titleFontSize * 0.8}px` : '48px'
+              }}
             >
               {config.cover?.title || "未命名戰略會議"}
             </h1>
@@ -519,8 +517,8 @@ const App = () => {
             </span>
           </div>
 
-          {/* Title */}
-          <h2 className="text-[56px] font-black text-slate-900 leading-[1.2] tracking-tight mb-16">
+          {/* Title with Highlighter */}
+          <h2 className="text-[48px] font-black text-slate-900 leading-[1.3] tracking-tight mb-12">
             <span className="relative inline-block px-2">
               <span className="absolute bottom-[10%] left-[-2%] w-[104%] h-[40%] bg-[#FCEBAF] rounded-sm transform -rotate-1 z-0 shadow-[0_4px_12px_rgba(252,235,175,0.4)]"></span>
               <span className="relative z-10">{t.title}</span>
@@ -530,11 +528,11 @@ const App = () => {
           {/* Context / Description */}
           {t.desc && (
             <div className="mb-20">
-              <div className="flex items-center gap-3 mb-6 opacity-40">
-                <Layout className="w-6 h-6" />
+              <div className="flex items-center gap-3 mb-4 opacity-40">
+                <Layout className="w-5 h-5" />
                 <span className="text-[14px] font-black tracking-[0.2em] uppercase">Context & Description</span>
               </div>
-              <div className="border-l-[6px] border-[#B89F5D] bg-slate-50 rounded-r-3xl p-10 shadow-sm">
+              <div className="border-l-[6px] border-[#B89F5D] bg-slate-50 rounded-r-3xl p-8 shadow-sm">
                 <div className="text-[20px] text-slate-700 leading-[2] whitespace-pre-wrap font-medium">
                   {t.desc}
                 </div>
@@ -544,15 +542,15 @@ const App = () => {
 
           {/* Decision & Action Items */}
           {t.notes && t.notes.trim() !== "" && (
-            <div className="bg-[#0F172A] rounded-[40px] p-16 shadow-lg mb-20 relative overflow-hidden">
+            <div className="bg-[#0F172A] rounded-[32px] p-12 shadow-lg mb-16 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-[80px] pointer-events-none" />
-              <div className="flex items-center gap-4 mb-10 border-b border-white/10 pb-6">
-                <Edit3 className="w-8 h-8 text-[#FCEBAF]" />
-                <span className="text-[22px] font-black text-[#FCEBAF] tracking-widest uppercase">
+              <div className="flex items-center gap-4 mb-8 border-b border-white/10 pb-5">
+                <Edit3 className="w-7 h-7 text-[#FCEBAF]" />
+                <span className="text-[20px] font-black text-[#FCEBAF] tracking-widest uppercase">
                   Decision & Action Items
                 </span>
               </div>
-              <div className="text-[22px] text-slate-100 leading-[2] font-medium whitespace-pre-wrap">
+              <div className="text-[20px] text-slate-100 leading-[2] font-medium whitespace-pre-wrap">
                 {t.notes}
               </div>
             </div>
@@ -560,32 +558,32 @@ const App = () => {
 
           {/* Attached Visuals */}
           {exportImgs.length > 0 && (
-            <div className="mt-24 pt-20 border-t-2 border-dashed border-slate-200">
-              <div className="flex items-center gap-5 mb-16">
-                <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center">
-                  <ImageIcon className="w-8 h-8 text-slate-500" />
+            <div className="mt-20 pt-16 border-t-2 border-dashed border-slate-200">
+              <div className="flex items-center gap-5 mb-12">
+                <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center">
+                  <ImageIcon className="w-7 h-7 text-slate-500" />
                 </div>
                 <div>
                   <h3 className="text-[24px] font-black text-slate-800 tracking-widest uppercase">Attached Visuals</h3>
-                  <p className="text-xl text-slate-400 font-medium mt-2">會議相關視覺參考圖檔</p>
+                  <p className="text-lg text-slate-400 font-medium mt-1">會議相關視覺參考圖檔</p>
                 </div>
               </div>
               
-              <div className="space-y-20 bg-slate-50 p-12 rounded-[48px] border border-slate-100">
+              <div className="space-y-16 bg-slate-50 p-10 rounded-[40px] border border-slate-100">
                 {exportImgs.map((img, imgIdx) => (
                   <div
                     key={imgIdx}
-                    className="bg-white rounded-[40px] p-8 border border-slate-200 shadow-sm relative flex flex-col items-center"
+                    className="bg-white rounded-[32px] p-6 border border-slate-200 shadow-sm relative flex flex-col items-center"
                   >
                     {exportImgs.length > 1 && (
-                      <div className="absolute -top-5 left-1/2 -translate-x-1/2 px-8 py-2 bg-slate-800 text-white text-sm font-bold rounded-full tracking-widest shadow-md">
+                      <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-6 py-1.5 bg-slate-800 text-white text-[12px] font-bold rounded-full tracking-widest shadow-md">
                         IMAGE {imgIdx + 1}
                       </div>
                     )}
                     <img
                       src={img}
                       alt="attachment"
-                      className="w-full object-contain rounded-[24px]"
+                      className="w-full object-contain rounded-[20px]"
                       style={{ maxHeight: "1600px" }}
                     />
                   </div>
@@ -595,9 +593,9 @@ const App = () => {
           )}
         </div>
 
-        <div className="text-center pb-12 pt-20 text-slate-400 mx-24 flex flex-col items-center gap-4">
+        <div className="text-center pb-12 pt-16 text-slate-400 mx-24 flex flex-col items-center gap-4">
           <div className="w-12 h-1 bg-slate-200 rounded-full" />
-          <div className="text-xs font-black tracking-[0.4em] uppercase opacity-40">
+          <div className="text-[10px] font-black tracking-[0.4em] uppercase opacity-40">
             Generated by Strategic Navigator
           </div>
         </div>
@@ -626,11 +624,9 @@ const App = () => {
             </div>
             <h1
               className="font-bold max-w-3xl leading-tight whitespace-pre-wrap"
-              style={
-                config.cover?.titleFontSize
-                  ? { fontSize: `${config.cover.titleFontSize * 0.6}px` }
-                  : {}
-              }
+              style={{
+                fontSize: displayConfig.cover?.titleFontSize ? `${displayConfig.cover.titleFontSize * 0.8}px` : '48px'
+              }}
             >
               {config.cover?.title || "未命名戰略會議"} - 筆記總覽
             </h1>
@@ -646,19 +642,19 @@ const App = () => {
         </div>
 
         <div className="px-24 py-20">
-          <div className="space-y-12">
+          <div className="space-y-10">
             {config.topics?.map((t, idx) => (
-              <div key={t.id} className="relative bg-white rounded-[48px] p-12 border border-slate-200 shadow-sm flex flex-col md:flex-row gap-10 items-start">
-                <div className="text-[64px] leading-none font-black text-slate-100 w-24 shrink-0 font-mono tracking-tighter">
+              <div key={t.id} className="relative bg-white rounded-[40px] p-10 border border-slate-200 shadow-sm flex gap-8 items-start">
+                <div className="text-[48px] leading-none font-black text-slate-100 w-20 shrink-0 font-mono tracking-tighter pt-1">
                   {String(idx + 1).padStart(2, "0")}
                 </div>
-                <div className="flex-1 mt-2">
-                  <div className="flex items-center gap-4 mb-6">
-                    <span className="text-lg font-bold text-[#B89F5D] tracking-widest uppercase">
+                <div className="flex-1">
+                  <div className="flex items-center gap-4 mb-5">
+                    <span className="text-[14px] font-bold text-[#B89F5D] tracking-widest uppercase">
                       {t.id}
                     </span>
                     <span
-                      className={`px-4 py-2 rounded-lg text-sm font-bold border ${
+                      className={`px-3 py-1.5 rounded-md text-[11px] font-bold border ${
                         t.status === "resolved"
                           ? "bg-[#F2F9F8] text-[#338F88] border-[#338F88]/20"
                           : "bg-[#FDF9F0] text-[#B89F5D] border-[#B89F5D]/20"
@@ -667,11 +663,11 @@ const App = () => {
                       {t.status === "resolved" ? "已決議" : "討論中"}
                     </span>
                   </div>
-                  <h3 className="text-[32px] font-black text-slate-800 mb-8 leading-[1.2] tracking-tight">
+                  <h3 className="text-[26px] font-black text-slate-800 mb-6 leading-[1.3] tracking-tight">
                     {t.title}
                   </h3>
-                  <div className="bg-slate-50 rounded-[32px] p-10 border border-slate-100">
-                    <div className="text-[20px] text-slate-700 leading-[1.9] font-medium whitespace-pre-wrap">
+                  <div className="bg-slate-50 rounded-[24px] p-8 border border-slate-100">
+                    <div className="text-[18px] text-slate-700 leading-[1.9] font-medium whitespace-pre-wrap">
                       {t.notes && t.notes.trim() !== "" ? (
                         t.notes
                       ) : (
@@ -687,9 +683,9 @@ const App = () => {
           </div>
         </div>
 
-        <div className="text-center pb-12 pt-20 text-slate-400 mx-24 flex flex-col items-center gap-4 border-t border-slate-200">
+        <div className="text-center pb-12 pt-16 text-slate-400 mx-24 flex flex-col items-center gap-4 border-t border-slate-200">
            <div className="w-12 h-1 bg-slate-300 rounded-full" />
-          <div className="text-sm font-black tracking-[0.3em] uppercase opacity-50">
+          <div className="text-[10px] font-black tracking-[0.4em] uppercase opacity-50">
             Generated by Strategic Navigator
           </div>
         </div>
@@ -703,7 +699,6 @@ const App = () => {
       style={{ fontFamily: FONT_FAMILY }}
     >
       <style>{`
-        /* 深色側邊欄專用捲軸 */
         .custom-scrollbar-dark::-webkit-scrollbar {
           width: 5px;
         }
@@ -718,7 +713,6 @@ const App = () => {
           background: rgba(184, 159, 93, 0.6);
         }
 
-        /* 淺色主畫面與面板專用捲軸 */
         .custom-scrollbar-light::-webkit-scrollbar {
           width: 6px;
         }
@@ -734,6 +728,7 @@ const App = () => {
         }
       `}</style>
 
+      {/* Sidebar */}
       <aside
         className={`bg-[#0A0F1C] border-r border-slate-800 flex flex-col z-40 relative transition-all duration-500 ease-in-out overflow-hidden shrink-0 ${
           isSidebarOpen ? "w-[320px]" : "w-[88px]"
@@ -766,7 +761,6 @@ const App = () => {
 
           <nav className="w-full flex flex-col min-h-[calc(100vh-250px)]">
             <div className="px-3 space-y-2">
-              {/* Home Menu */}
               <button
                 onClick={() => setActivePage("cover")}
                 title={!isSidebarOpen ? "會議首頁" : ""}
@@ -781,7 +775,6 @@ const App = () => {
                 {!isSidebarOpen ? <Home className="w-5 h-5" /> : "會議首頁"}
               </button>
 
-              {/* Agenda Menu */}
               <button
                 onClick={() => setActivePage("agenda")}
                 title={!isSidebarOpen ? "議程目錄" : ""}
@@ -854,7 +847,6 @@ const App = () => {
                     ) : (
                       <>
                         <span className="text-[13px] font-mono tracking-tighter z-10">{String(idx + 1).padStart(2, '0')}</span>
-                        {/* Status indicator dot when collapsed */}
                         <div 
                           className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full z-20"
                           style={{
@@ -887,25 +879,32 @@ const App = () => {
         </div>
       </aside>
 
+      {/* Main Content */}
       <main
         ref={scrollContainerRef}
-        className={`flex-1 relative overflow-y-auto custom-scrollbar-light bg-slate-50 transition-all duration-500 ${
-          isNotesOpen ? "rounded-l-[48px] shadow-2xl" : ""
-        }`}
+        className={`flex-1 relative overflow-y-auto custom-scrollbar-light transition-all duration-500 ${
+          activePage === "cover" ? "bg-[#0A0F1C]" : "bg-slate-50"
+        } ${isNotesOpen ? "rounded-l-[48px] shadow-2xl" : ""}`}
       >
+        {/* Toggle Menu Button - Fixed Left, Absolute alignment avoided collision */}
         <button
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className={`fixed top-8 z-50 w-11 h-11 bg-white/90 backdrop-blur-md shadow-sm rounded-xl flex items-center justify-center border border-slate-200 hover:bg-slate-50 transition-all duration-500 ease-in-out group ${
+          className={`fixed top-8 z-50 w-11 h-11 backdrop-blur-md shadow-sm rounded-xl flex items-center justify-center transition-all duration-500 ease-in-out group ${
             isSidebarOpen ? "left-[344px]" : "left-[112px]"
+          } ${
+            activePage === "cover"
+              ? "bg-white/10 border border-white/20 text-white/50 hover:bg-white/20 hover:text-white"
+              : "bg-white/90 border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800"
           }`}
           title={isSidebarOpen ? "收起側欄" : "展開側欄"}
         >
-          <Menu className="w-5 h-5 text-slate-500 group-hover:text-slate-800" />
+          <Menu className="w-5 h-5" />
         </button>
 
+        {/* Right Toolbar Actions */}
         <div className="fixed top-8 right-8 z-50 flex items-center gap-3">
           {selectedTopics.length > 0 && activePage === "agenda" && (
-            <div className="flex items-center gap-4 bg-[#0F172A] text-white px-5 h-12 rounded-2xl shadow-xl border border-slate-800 animate-in slide-in-from-right-8 fade-in duration-300">
+            <div className="flex items-center gap-4 bg-[#0F172A] text-white px-5 h-11 rounded-xl shadow-xl border border-slate-800 animate-in slide-in-from-right-8 fade-in duration-300">
               <span className="text-[13px] font-bold flex items-center">
                 已選取{" "}
                 <span className="text-[#B89F5D] mx-1.5 text-[15px]">
@@ -942,54 +941,61 @@ const App = () => {
               </button>
             </div>
           )}
-          {activePage !== "cover" && (
-            <button
-              onClick={openConfig}
-              className="w-12 h-12 bg-white/90 backdrop-blur-md shadow-sm rounded-2xl flex items-center justify-center border border-slate-200 hover:border-[#338F88] transition-all"
-            >
-              <Settings className="w-5 h-5 text-slate-600" />
-            </button>
-          )}
+          
+          {/* Subtle Settings Button always visible */}
+          <button
+            onClick={openConfig}
+            className={`w-11 h-11 flex items-center justify-center rounded-xl transition-all shadow-sm ${
+              activePage === "cover"
+                ? "bg-white/5 border border-transparent text-white/30 hover:bg-white/10 hover:text-white/80"
+                : "bg-white/90 backdrop-blur-md border border-slate-200 hover:border-[#338F88] text-slate-500 hover:text-[#338F88]"
+            }`}
+            title="設定專案"
+          >
+            <Settings className="w-5 h-5" />
+          </button>
         </div>
 
-        <div className="flex-1">
+        <div className="flex-1 w-full relative">
           {activePage === "cover" && (
-            <div className="h-full min-h-screen flex flex-col justify-center p-8 md:p-12 lg:p-20 bg-[#0A0F1C] text-white relative overflow-hidden">
+            <div className="min-h-screen flex flex-col justify-center px-8 md:px-16 pt-32 pb-16 text-white relative overflow-hidden">
               <div className="absolute top-[-10%] right-[-5%] w-[60%] h-[60%] bg-gradient-to-bl from-[#338F88]/20 via-[#B89F5D]/5 to-transparent rounded-full blur-[120px] opacity-40 pointer-events-none" />
               <div className="absolute bottom-[-10%] left-[-5%] w-[50%] h-[50%] bg-[#0F172A] rounded-full blur-[120px] opacity-80 pointer-events-none" />
 
-              <div className="z-10 w-full max-w-[1440px] mx-auto relative flex items-center h-full">
-                <div className="w-full lg:w-[65%] xl:w-[60%] relative z-10 flex flex-col justify-center lg:pr-10">
-                  <div className="flex items-center gap-4 mb-10">
-                    <div className="w-12 h-1 bg-[#B89F5D] rounded-full" />
-                    <span className="text-[#B89F5D] font-black tracking-[0.4em] text-xs uppercase">
+              {/* Flexbox layout to fix Diamond overlapping safely */}
+              <div className="z-10 w-full max-w-[1200px] mx-auto relative flex flex-col lg:flex-row items-center justify-between gap-12">
+                {/* Left Column (Text 55%) */}
+                <div className="w-full lg:w-[55%] relative z-10 flex flex-col justify-center">
+                  <div className="flex items-center gap-4 mb-8">
+                    <div className="w-10 h-1 bg-[#B89F5D] rounded-full" />
+                    <span className="text-[#B89F5D] font-black tracking-[0.3em] text-xs md:text-sm uppercase">
                       Strategic Session
                     </span>
                   </div>
 
                   <h1
-                    className="font-bold mb-6 xl:mb-8 tracking-tight leading-[1.2] drop-shadow-lg break-words whitespace-pre-wrap transition-all duration-300 ease-out"
+                    className="font-bold mb-8 tracking-tight leading-[1.2] drop-shadow-lg break-words whitespace-pre-wrap transition-all duration-300"
                     style={{
                       fontSize: `clamp(32px, ${
-                        displayConfig.cover?.titleFontSize || 80
-                      }px, 8vw)`,
+                        displayConfig.cover?.titleFontSize || 64
+                      }px, 64px)`, // Added upper clamp to prevent insane sizing
                     }}
                   >
                     {displayConfig.cover?.title || "未命名會議"}{" "}
                   </h1>
 
                   {displayConfig.cover?.desc && (
-                    <p className="text-lg lg:text-xl xl:text-2xl text-slate-300 mb-12 xl:mb-16 max-w-3xl leading-[1.6] font-medium border-l-4 border-[#338F88] pl-6">
+                    <p className="text-[16px] md:text-[18px] text-slate-300 mb-12 max-w-[600px] leading-[1.8] font-medium border-l-4 border-[#338F88] pl-6">
                       {displayConfig.cover?.desc}
                     </p>
                   )}
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 xl:mb-16 py-8 border-y border-white/10 w-full max-w-[750px]">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-12 py-8 border-y border-white/10 w-full max-w-[650px]">
                     <div className="flex flex-col">
                       <span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-2">
                         Meeting Date
                       </span>
-                      <span className="text-sm md:text-base font-bold text-slate-200 flex items-center gap-2">
+                      <span className="text-sm md:text-[15px] font-bold text-slate-200 flex items-center gap-2">
                         <Calendar className="w-4 h-4 text-[#B89F5D]" />{" "}
                         {displayConfig.sessionDate || "TBD"}
                       </span>
@@ -999,7 +1005,7 @@ const App = () => {
                         Attendees
                       </span>
                       <span
-                        className="text-sm md:text-base font-bold text-slate-200 flex items-center gap-2 truncate"
+                        className="text-sm md:text-[15px] font-bold text-slate-200 flex items-center gap-2 truncate"
                         title={displayConfig.attendees}
                       >
                         <Users className="w-4 h-4 text-[#B89F5D]" />{" "}
@@ -1010,7 +1016,7 @@ const App = () => {
                       <span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-2">
                         Agenda
                       </span>
-                      <span className="text-sm md:text-base font-bold text-[#B89F5D] flex items-center gap-2">
+                      <span className="text-sm md:text-[15px] font-bold text-[#B89F5D] flex items-center gap-2">
                         <ClipboardList className="w-4 h-4" />{" "}
                         {displayConfig.topics?.length || 0} ITEMS
                       </span>
@@ -1023,7 +1029,7 @@ const App = () => {
                         setActivePage("agenda");
                       else openConfig();
                     }}
-                    className="px-6 py-3.5 bg-white text-[#0A0F1C] rounded-[14px] font-bold text-[15px] flex items-center gap-3 transition-all hover:bg-slate-200 shadow-xl group w-fit"
+                    className="px-6 py-3.5 bg-white text-[#0A0F1C] rounded-2xl font-bold text-[15px] flex items-center gap-3 transition-all hover:bg-slate-200 shadow-xl group w-fit"
                   >
                     {displayConfig.topics?.length > 0
                       ? "開始進行會議"
@@ -1032,35 +1038,38 @@ const App = () => {
                   </button>
                 </div>
 
-                <div className="hidden lg:flex absolute right-[-10%] xl:right-0 top-1/2 -translate-y-1/2 w-[400px] xl:w-[500px] h-[400px] xl:h-[500px] justify-center items-center pointer-events-none z-0 transform scale-[0.65] xl:scale-100 origin-right opacity-80 xl:opacity-100">
-                  <div className="absolute inset-0 border border-white/5 rounded-full animate-[spin_60s_linear_infinite]" />
-                  <div className="absolute inset-10 border border-[#B89F5D]/20 rounded-full animate-[spin_40s_linear_infinite_reverse]" />
-                  <div className="absolute inset-20 border border-dashed border-[#338F88]/30 rounded-full animate-[spin_80s_linear_infinite]" />
+                {/* Right Column (Diamond Fixed Proportions 45%) */}
+                <div className="hidden lg:flex w-[45%] justify-center items-center pointer-events-none z-0">
+                  <div className="relative w-[360px] h-[360px] xl:w-[460px] xl:h-[460px] flex justify-center items-center">
+                    <div className="absolute inset-0 border border-white/5 rounded-full animate-[spin_60s_linear_infinite]" />
+                    <div className="absolute inset-10 xl:inset-12 border border-[#B89F5D]/20 rounded-full animate-[spin_40s_linear_infinite_reverse]" />
+                    <div className="absolute inset-20 xl:inset-24 border border-dashed border-[#338F88]/30 rounded-full animate-[spin_80s_linear_infinite]" />
 
-                  <div className="w-64 h-64 lg:w-80 lg:h-80 bg-gradient-to-br from-[#B89F5D]/80 to-[#338F88]/80 rounded-[40px] rotate-45 shadow-[0_0_100px_rgba(184,159,93,0.2)] backdrop-blur-3xl flex items-center justify-center relative overflow-hidden group">
-                    <div className="absolute inset-0 bg-white/5 group-hover:bg-white/10 transition-colors" />
-                    <div className="w-56 h-56 lg:w-64 lg:h-64 bg-[#0A0F1C] rounded-[32px] flex items-center justify-center border border-white/10 shadow-inner relative overflow-hidden">
-                      <div className="w-24 h-24 lg:w-32 lg:h-32 bg-gradient-to-tr from-[#B89F5D] to-[#FCEBAF] rounded-2xl shadow-[0_0_50px_rgba(252,235,175,0.4)] animate-pulse" />
+                    <div className="w-48 h-48 xl:w-64 xl:h-64 bg-gradient-to-br from-[#B89F5D]/80 to-[#338F88]/80 rounded-[32px] rotate-45 shadow-[0_0_80px_rgba(184,159,93,0.15)] backdrop-blur-3xl flex items-center justify-center relative overflow-hidden group">
+                      <div className="absolute inset-0 bg-white/5 group-hover:bg-white/10 transition-colors" />
+                      <div className="w-40 h-40 xl:w-52 xl:h-52 bg-[#0A0F1C] rounded-[24px] flex items-center justify-center border border-white/10 shadow-inner relative overflow-hidden">
+                        <div className="w-16 h-16 xl:w-20 xl:h-20 bg-gradient-to-tr from-[#B89F5D] to-[#FCEBAF] rounded-xl shadow-[0_0_40px_rgba(252,235,175,0.3)] animate-pulse" />
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="absolute top-12 right-0 bg-[#0F172A]/90 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl transform translate-x-8 hover:-translate-y-1 transition-transform">
-                    <span className="text-[10px] text-slate-400 font-bold tracking-widest uppercase block mb-1.5">
-                      System Status
-                    </span>
-                    <span className="text-sm font-bold text-[#338F88] flex items-center gap-2">
-                      <div className="w-2 h-2 bg-[#338F88] rounded-full animate-ping" />{" "}
-                      Synchronized
-                    </span>
-                  </div>
+                    <div className="absolute top-4 -right-4 xl:top-8 xl:-right-6 bg-[#0F172A]/90 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-xl transform hover:-translate-y-1 transition-transform">
+                      <span className="text-[10px] text-slate-400 font-bold tracking-widest uppercase block mb-1.5">
+                        System Status
+                      </span>
+                      <span className="text-[13px] font-bold text-[#338F88] flex items-center gap-2">
+                        <div className="w-2 h-2 bg-[#338F88] rounded-full animate-ping" />{" "}
+                        Synchronized
+                      </span>
+                    </div>
 
-                  <div className="absolute bottom-16 left-0 bg-[#0F172A]/90 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl transform -translate-x-4 hover:-translate-y-1 transition-transform">
-                    <span className="text-[10px] text-slate-400 font-bold tracking-widest uppercase block mb-1.5">
-                      Active Workspace
-                    </span>
-                    <span className="text-sm font-bold text-white flex items-center gap-2">
-                      <Layout className="w-4 h-4 text-[#B89F5D]" /> Board Ready
-                    </span>
+                    <div className="absolute bottom-8 -left-4 xl:bottom-12 xl:-left-6 bg-[#0F172A]/90 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-xl transform hover:-translate-y-1 transition-transform">
+                      <span className="text-[10px] text-slate-400 font-bold tracking-widest uppercase block mb-1.5">
+                        Active Workspace
+                      </span>
+                      <span className="text-[13px] font-bold text-white flex items-center gap-2">
+                        <Layout className="w-3.5 h-3.5 text-[#B89F5D]" /> Board Ready
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1068,15 +1077,15 @@ const App = () => {
           )}
 
           {activePage === "agenda" && (
-            <div className="min-h-screen p-8 md:p-12 lg:p-20 mx-auto w-full max-w-[1200px] 2xl:max-w-[1440px] transition-all flex flex-col justify-center">
+            <div className="min-h-screen px-8 md:px-16 pt-32 pb-24 mx-auto w-full max-w-[1000px] xl:max-w-[1200px] transition-all flex flex-col justify-start">
               <div className="flex items-center gap-4 mb-8">
-                <div className="w-12 h-1 bg-[#B89F5D] rounded-full" />
-                <span className="text-[#B89F5D] font-black tracking-[0.4em] text-xs uppercase">
+                <div className="w-10 h-1 bg-[#B89F5D] rounded-full" />
+                <span className="text-[#B89F5D] font-black tracking-[0.4em] text-[11px] md:text-xs uppercase">
                   Meeting Agenda
                 </span>
               </div>
 
-              <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-slate-900 mb-10 lg:mb-12 leading-tight tracking-tighter">
+              <h2 className="text-3xl md:text-[40px] font-black text-slate-900 mb-10 leading-tight tracking-tighter">
                 議程目錄
               </h2>
 
@@ -1086,21 +1095,21 @@ const App = () => {
                     <div
                       key={t.id}
                       onClick={() => setActivePage(t.id)}
-                      className="group p-8 md:p-10 lg:p-12 bg-white border border-slate-200 rounded-[32px] hover:border-[#338F88] hover:shadow-2xl transition-all duration-300 cursor-pointer flex flex-col md:flex-row gap-8 lg:gap-10 md:items-start relative overflow-hidden"
+                      className="group p-8 md:p-10 bg-white border border-slate-200 rounded-[32px] hover:border-[#338F88] hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col md:flex-row gap-6 md:gap-8 md:items-start relative overflow-hidden"
                     >
-                      <div className="absolute left-0 top-0 bottom-0 w-2 bg-transparent group-hover:bg-[#338F88] transition-colors" />
+                      <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-transparent group-hover:bg-[#338F88] transition-colors" />
 
-                      <div className="text-[64px] leading-none font-black text-slate-100 group-hover:text-[#338F88]/10 transition-colors w-24 shrink-0 font-mono tracking-tighter">
+                      <div className="text-[40px] md:text-[48px] leading-none font-black text-slate-100 group-hover:text-[#338F88]/10 transition-colors w-16 md:w-20 shrink-0 font-mono tracking-tighter pt-1">
                         {String(idx + 1).padStart(2, "0")}
                       </div>
 
-                      <div className="flex-1 mt-2">
-                        <div className="flex items-center gap-4 mb-5">
-                          <span className="text-sm font-bold text-[#B89F5D] tracking-widest uppercase">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-4 mb-3">
+                          <span className="text-[12px] font-bold text-[#B89F5D] tracking-widest uppercase">
                             {t.id}
                           </span>
                           <span
-                            className={`px-3 py-1.5 rounded-md text-[11px] font-bold ${
+                            className={`px-2.5 py-1 rounded-md text-[10px] font-bold ${
                               t.status === "resolved"
                                 ? "bg-[#338F88]/10 text-[#338F88]"
                                 : "bg-slate-100 text-slate-500"
@@ -1109,7 +1118,7 @@ const App = () => {
                             {t.status === "resolved" ? "已決議" : "討論中"}
                           </span>
                         </div>
-                        <h3 className="text-2xl md:text-[28px] lg:text-[32px] font-bold text-slate-900 mb-4 group-hover:text-[#338F88] transition-colors leading-[1.2] tracking-tight">
+                        <h3 className="text-xl md:text-[24px] font-bold text-slate-900 mb-3 group-hover:text-[#338F88] transition-colors leading-[1.3] tracking-tight">
                           {t.title}
                         </h3>
                         <p className="text-[15px] md:text-[16px] text-slate-600 font-medium whitespace-pre-wrap leading-[1.8] max-w-3xl opacity-90">
@@ -1117,7 +1126,7 @@ const App = () => {
                         </p>
                       </div>
 
-                      <div className="shrink-0 mt-4 md:mt-4 flex items-center gap-4">
+                      <div className="shrink-0 mt-4 md:mt-2 flex items-center gap-3">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -1127,48 +1136,48 @@ const App = () => {
                                 : [...prev, t.id]
                             );
                           }}
-                          className={`w-9 h-9 rounded-[10px] border-2 flex items-center justify-center transition-all shadow-sm ${
+                          className={`w-9 h-9 rounded-lg border-2 flex items-center justify-center transition-all shadow-sm ${
                             selectedTopics.includes(t.id)
                               ? "bg-[#338F88] border-[#338F88] text-white"
                               : "bg-white border-slate-200 text-transparent hover:border-[#338F88]/50 hover:bg-[#FDF9F0]"
                           }`}
                           title="選取以批次匯出"
                         >
-                          <Check className="w-5 h-5" />
+                          <Check className="w-4 h-4" />
                         </button>
 
-                        <div className="w-px h-8 bg-slate-200" />
+                        <div className="w-px h-6 bg-slate-200" />
 
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleExportImage(t.id);
                           }}
-                          className={`w-12 h-12 rounded-full border flex items-center justify-center transition-all shadow-sm ${
+                          className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all shadow-sm ${
                             isExporting && exportingTopicId === t.id
                               ? "bg-[#0F172A] text-[#B89F5D] border-[#0F172A] animate-pulse"
                               : "bg-white border-slate-200 text-slate-400 hover:text-[#B89F5D] hover:border-[#B89F5D] hover:bg-[#FDF9F0]"
                           }`}
                           title="匯出此議題長圖"
                         >
-                          <FileDown className="w-5 h-5" />
+                          <FileDown className="w-4 h-4" />
                         </button>
                         <div
-                          className="w-12 h-12 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center group-hover:bg-[#338F88] group-hover:text-white group-hover:border-[#338F88] transition-all shadow-sm"
+                          className="w-10 h-10 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center group-hover:bg-[#338F88] group-hover:text-white group-hover:border-[#338F88] transition-all shadow-sm"
                           title="進入議題"
                         >
-                          <ArrowRight className="w-5 h-5" />
+                          <ArrowRight className="w-4 h-4" />
                         </div>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <div className="py-24 text-center text-slate-400 font-medium bg-white rounded-[40px] border border-dashed border-slate-300">
-                    <ClipboardList className="w-12 h-12 mx-auto mb-4 opacity-50 text-slate-400" />
-                    <p className="text-lg">
+                  <div className="py-20 text-center text-slate-400 font-medium bg-white rounded-[32px] border border-dashed border-slate-300">
+                    <ClipboardList className="w-10 h-10 mx-auto mb-3 opacity-50 text-slate-400" />
+                    <p className="text-[15px]">
                       尚未建立任何議題
                       <br />
-                      <span className="text-sm mt-2 block">
+                      <span className="text-sm mt-1 block">
                         請點擊右上角設定按鈕新增
                       </span>
                     </p>
@@ -1177,13 +1186,13 @@ const App = () => {
               </div>
 
               {config.topics?.length > 0 && (
-                <div className="mt-16 flex justify-center">
+                <div className="mt-12 flex justify-center">
                   <button
                     onClick={() => setActivePage(config.topics[0].id)}
-                    className="px-10 py-5 lg:px-14 lg:py-6 bg-[#0F172A] text-white rounded-[20px] font-bold text-lg flex items-center gap-3 transition-all hover:bg-[#338F88] hover:-translate-y-1 hover:shadow-2xl active:scale-95 group"
+                    className="px-8 py-4 bg-[#0F172A] text-white rounded-[18px] font-bold text-[16px] flex items-center gap-2 transition-all hover:bg-[#338F88] hover:-translate-y-1 hover:shadow-xl active:scale-95 group"
                   >
                     進入第一個議題{" "}
-                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1.5 transition-transform" />
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />
                   </button>
                 </div>
               )}
@@ -1191,18 +1200,18 @@ const App = () => {
           )}
 
           {activePage === "summary" && (
-            <div className="min-h-screen p-8 md:p-12 lg:p-20 mx-auto w-full max-w-[1200px] 2xl:max-w-[1440px] transition-all flex flex-col justify-center animate-in fade-in duration-500">
-              <div className="flex items-center justify-between mb-12">
+            <div className="min-h-screen px-8 md:px-16 pt-32 pb-24 mx-auto w-full max-w-[1000px] xl:max-w-[1200px] transition-all flex flex-col justify-start animate-in fade-in duration-500">
+              <div className="flex items-center justify-between mb-10">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-1 bg-[#B89F5D] rounded-full" />
-                  <span className="text-[#B89F5D] font-black tracking-[0.4em] text-xs uppercase">
+                  <div className="w-10 h-1 bg-[#B89F5D] rounded-full" />
+                  <span className="text-[#B89F5D] font-black tracking-[0.4em] text-[11px] md:text-xs uppercase">
                     Executive Summary
                   </span>
                 </div>
                 <button
                   onClick={() => handleExportSummary()}
                   disabled={isExporting}
-                  className="px-5 py-2.5 bg-[#0F172A] text-white rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-slate-800 transition-all shadow-md active:scale-95 group"
+                  className="px-4 py-2 bg-[#0F172A] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 hover:bg-slate-800 transition-all shadow-md active:scale-95 group"
                 >
                   <FileDown
                     className={`w-4 h-4 ${
@@ -1212,12 +1221,12 @@ const App = () => {
                     }`}
                   />
                   {isExporting && exportingTopicId === "summary"
-                    ? "長圖匯出中..."
+                    ? "匯出中..."
                     : "匯出總覽長圖"}
                 </button>
               </div>
 
-              <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-slate-900 mb-10 lg:mb-12 leading-tight tracking-tighter">
+              <h2 className="text-3xl md:text-[40px] font-black text-slate-900 mb-10 leading-tight tracking-tighter">
                 會議決議與筆記總覽
               </h2>
 
@@ -1227,21 +1236,21 @@ const App = () => {
                     <div
                       key={t.id}
                       onClick={() => setActivePage(t.id)}
-                      className="group p-8 md:p-10 lg:p-12 bg-white border border-slate-200 rounded-[32px] hover:border-[#338F88] hover:shadow-2xl transition-all duration-300 cursor-pointer flex flex-col md:flex-row gap-8 lg:gap-10 md:items-start relative overflow-hidden"
+                      className="group p-8 md:p-10 bg-white border border-slate-200 rounded-[32px] hover:border-[#338F88] hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col md:flex-row gap-6 md:gap-8 md:items-start relative overflow-hidden"
                     >
-                      <div className="absolute left-0 top-0 bottom-0 w-2 bg-transparent group-hover:bg-[#338F88] transition-colors" />
+                      <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-transparent group-hover:bg-[#338F88] transition-colors" />
 
-                      <div className="text-[64px] leading-none font-black text-slate-100 group-hover:text-[#338F88]/10 transition-colors w-24 shrink-0 font-mono tracking-tighter">
+                      <div className="text-[40px] md:text-[48px] leading-none font-black text-slate-100 group-hover:text-[#338F88]/10 transition-colors w-16 md:w-20 shrink-0 font-mono tracking-tighter pt-1">
                         {String(idx + 1).padStart(2, "0")}
                       </div>
 
-                      <div className="flex-1 mt-2">
-                        <div className="flex items-center gap-4 mb-5">
-                          <span className="text-sm font-bold text-[#B89F5D] tracking-widest uppercase">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-4 mb-3">
+                          <span className="text-[12px] font-bold text-[#B89F5D] tracking-widest uppercase">
                             {t.id}
                           </span>
                           <span
-                            className={`px-3 py-1.5 rounded-md text-[11px] font-bold ${
+                            className={`px-2.5 py-1 rounded-md text-[10px] font-bold ${
                               t.status === "resolved"
                                 ? "bg-[#338F88]/10 text-[#338F88]"
                                 : "bg-slate-100 text-slate-500"
@@ -1250,11 +1259,11 @@ const App = () => {
                             {t.status === "resolved" ? "已決議" : "討論中"}
                           </span>
                         </div>
-                        <h3 className="text-2xl md:text-[28px] lg:text-[32px] font-bold text-slate-900 mb-6 group-hover:text-[#338F88] transition-colors leading-[1.2] tracking-tight">
+                        <h3 className="text-xl md:text-[24px] font-bold text-slate-900 mb-4 group-hover:text-[#338F88] transition-colors leading-[1.3] tracking-tight">
                           {t.title}
                         </h3>
                         
-                        <div className="bg-slate-50/80 rounded-2xl p-6 md:p-8 border border-slate-100 group-hover:bg-[#FDFDFD] group-hover:border-[#338F88]/20 transition-all text-[16px] md:text-[18px] leading-[1.9] text-slate-700 whitespace-pre-wrap font-medium">
+                        <div className="bg-slate-50/80 rounded-2xl p-6 border border-slate-100 group-hover:bg-[#FDFDFD] group-hover:border-[#338F88]/20 transition-all text-[15px] md:text-[16px] leading-[1.8] text-slate-700 whitespace-pre-wrap font-medium">
                           {t.notes && t.notes.trim() !== "" ? (
                             t.notes
                           ) : (
@@ -1267,12 +1276,12 @@ const App = () => {
                     </div>
                   ))
                 ) : (
-                  <div className="py-24 text-center text-slate-400 font-medium bg-white rounded-[40px] border border-dashed border-slate-300">
-                    <ClipboardList className="w-12 h-12 mx-auto mb-4 opacity-50 text-slate-400" />
-                    <p className="text-lg">
+                  <div className="py-20 text-center text-slate-400 font-medium bg-white rounded-[32px] border border-dashed border-slate-300">
+                    <ClipboardList className="w-10 h-10 mx-auto mb-3 opacity-50 text-slate-400" />
+                    <p className="text-[15px]">
                       尚未建立任何議題
                       <br />
-                      <span className="text-sm mt-2 block">
+                      <span className="text-sm mt-1 block">
                         請點擊右上角設定按鈕新增
                       </span>
                     </p>
@@ -1284,23 +1293,21 @@ const App = () => {
 
           {currentTopic && activePage !== "summary" && activePage !== "agenda" && activePage !== "cover" && (
             <div
-              className={`p-8 md:p-12 lg:p-20 mx-auto w-full pb-48 transition-all ${
-                isNotesOpen ? "max-w-[800px] 2xl:max-w-[1000px]" : "max-w-[1200px] 2xl:max-w-[1440px]"
-              }`}
+              className={`px-8 md:px-16 pt-32 pb-48 mx-auto w-full max-w-[1000px] xl:max-w-[1200px] transition-all`}
             >
               {/* Toolbar */}
-              <div className="flex items-center justify-between mb-16">
-                <span className="px-5 py-2 rounded-full bg-white border border-slate-200 text-[11px] font-black text-slate-400 tracking-widest uppercase shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-4 mb-12">
+                <span className="px-4 py-1.5 rounded-full bg-white border border-slate-200 text-[10px] md:text-[11px] font-black text-slate-400 tracking-widest uppercase shadow-sm">
                   {currentTopic.id}
                 </span>
-                <div className="flex gap-4 items-center">
+                <div className="flex gap-3 md:gap-4 items-center">
                   <button
                     onClick={() => handleExportImage(currentTopic.id)}
                     disabled={isExporting}
-                    className="px-5 py-2 bg-[#0F172A] text-white rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-slate-800 transition-all shadow-md"
+                    className="px-4 py-2 bg-[#0F172A] text-white rounded-xl text-[11px] md:text-xs font-bold flex items-center gap-1.5 hover:bg-slate-800 transition-all shadow-sm"
                   >
                     <FileDown
-                      className={`w-4 h-4 ${
+                      className={`w-3.5 h-3.5 md:w-4 md:h-4 ${
                         isExporting && exportingTopicId === currentTopic.id
                           ? "animate-pulse"
                           : ""
@@ -1310,13 +1317,13 @@ const App = () => {
                       ? "匯出中..."
                       : "匯出此議題"}
                   </button>
-                  <div className="w-px h-6 bg-slate-200" />
-                  <div className="flex gap-2 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm">
+                  <div className="w-px h-5 bg-slate-200" />
+                  <div className="flex gap-1.5 bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
                     <button
                       onClick={() =>
                         updateTopic(currentTopic.id, "status", "discussing")
                       }
-                      className={`px-5 py-2 rounded-xl text-xs font-bold transition-all ${
+                      className={`px-4 py-1.5 rounded-lg text-[11px] md:text-xs font-bold transition-all ${
                         currentTopic.status === "discussing"
                           ? "bg-slate-50 shadow-sm text-amber-600"
                           : "text-slate-400 hover:text-slate-600"
@@ -1328,9 +1335,9 @@ const App = () => {
                       onClick={() =>
                         updateTopic(currentTopic.id, "status", "resolved")
                       }
-                      className={`px-5 py-2 rounded-xl text-xs font-bold transition-all ${
+                      className={`px-4 py-1.5 rounded-lg text-[11px] md:text-xs font-bold transition-all ${
                         currentTopic.status === "resolved"
-                          ? "bg-[#338F88] text-white shadow-md"
+                          ? "bg-[#338F88] text-white shadow-sm"
                           : "text-slate-400 hover:text-slate-600"
                       }`}
                     >
@@ -1340,78 +1347,78 @@ const App = () => {
                 </div>
               </div>
 
-              {/* Title Section */}
-              <h2 className="text-[40px] md:text-[48px] lg:text-[56px] font-black text-slate-900 mb-12 leading-[1.2] tracking-tight">
+              {/* Title Section (with Highlighter) */}
+              <h2 className="text-[32px] md:text-[40px] font-black text-slate-900 mb-10 leading-[1.3] tracking-tight">
                 <span className="relative inline-block px-2">
                   <span className="absolute bottom-[10%] left-[-2%] w-[104%] h-[40%] bg-[#FCEBAF] rounded-sm transform -rotate-1 z-0 shadow-[0_4px_12px_rgba(252,235,175,0.4)]"></span>
                   <span className="relative z-10">{currentTopic.title}</span>
                 </span>
               </h2>
 
-              {/* Context Block - Redesigned to be a distinct container */}
+              {/* Context Block */}
               {currentTopic.desc && (
-                <div className="mb-16 lg:mb-20">
-                  <div className="flex items-center gap-3 mb-4 opacity-40">
-                    <Layout className="w-5 h-5" />
-                    <span className="text-xs font-black tracking-widest uppercase">Context & Description</span>
+                <div className="mb-16">
+                  <div className="flex items-center gap-2.5 mb-3 opacity-40">
+                    <Layout className="w-4 h-4" />
+                    <span className="text-[11px] font-black tracking-widest uppercase">Context & Description</span>
                   </div>
-                  <div className="border-l-4 border-[#B89F5D] bg-white rounded-r-2xl p-8 md:p-10 shadow-sm transition-all hover:bg-slate-50/50">
-                    <div className="text-[18px] md:text-[20px] text-slate-700 leading-[2] whitespace-pre-wrap font-medium">
+                  <div className="border-l-4 border-[#B89F5D] bg-white rounded-r-2xl p-6 md:p-8 shadow-sm transition-all hover:bg-slate-50/50">
+                    <div className="text-[16px] md:text-[18px] text-slate-700 leading-[2] whitespace-pre-wrap font-medium">
                       {currentTopic.desc}
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Visual Assets Block - Redesigned to separate content properly */}
-              <div className="bg-white rounded-[48px] p-2 overflow-hidden border border-slate-200 shadow-sm mb-20">
-                <div className="px-8 lg:px-10 py-6 flex flex-wrap items-center justify-between border-b border-slate-100 gap-4">
+              {/* Visual Assets Block */}
+              <div className="bg-white rounded-[32px] md:rounded-[40px] p-1.5 md:p-2 overflow-hidden border border-slate-200 shadow-sm mb-16">
+                <div className="px-6 md:px-8 py-5 flex flex-wrap items-center justify-between border-b border-slate-100 gap-4">
                   <div className="flex items-center gap-2">
-                    <ImageIcon className="w-5 h-5 text-slate-400" />
-                    <span className="text-xs font-black text-slate-400 tracking-widest uppercase">
+                    <ImageIcon className="w-4 h-4 text-slate-400" />
+                    <span className="text-[11px] font-black text-slate-400 tracking-widest uppercase">
                       Visual Assets & Collaboration
                     </span>
                   </div>
                   {currentTopic.systems?.length > 0 && (
-                    <div className="flex flex-wrap gap-2.5">
+                    <div className="flex flex-wrap gap-2">
                       {currentTopic.systems.map((s, i) => (
                         <a
                           key={i}
                           href={s.url}
                           target="_blank"
                           rel="noreferrer"
-                          className="px-3.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[13px] font-bold text-slate-600 hover:border-[#338F88] hover:text-[#338F88] transition-all flex items-center gap-1.5 shadow-sm"
+                          className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[12px] font-bold text-slate-600 hover:border-[#338F88] hover:text-[#338F88] transition-all flex items-center gap-1 shadow-sm"
                         >
-                          {s.name} <ExternalLink className="w-3.5 h-3.5" />
+                          {s.name} <ExternalLink className="w-3 h-3" />
                         </a>
                       ))}
                     </div>
                   )}
                 </div>
 
-                <div className="min-h-[400px] bg-slate-50/50 rounded-[40px] flex flex-col items-center justify-center p-8 lg:p-12 gap-16 relative">
+                <div className="min-h-[300px] bg-slate-50/50 rounded-[28px] md:rounded-[36px] flex flex-col items-center justify-center p-6 md:p-10 gap-12 relative">
                   {currentTopicImages.length > 0 ? (
                     currentTopicImages.map((img, i) => (
                       <div
                         key={i}
-                        className="w-full flex flex-col items-center group relative bg-white rounded-[32px] p-6 border border-slate-100 shadow-sm"
+                        className="w-full flex flex-col items-center group relative bg-white rounded-[24px] md:rounded-[32px] p-5 md:p-8 border border-slate-100 shadow-sm"
                       >
                         {currentTopicImages.length > 1 && (
-                          <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#0F172A] text-white px-5 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase shadow-md">
+                          <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#0F172A] text-white px-4 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase shadow-md">
                             IMAGE {i + 1}
                           </div>
                         )}
                         <img
                           src={img}
-                          className="max-w-full max-h-[800px] object-contain rounded-2xl cursor-zoom-in hover:scale-[1.01] transition-transform"
+                          className="max-w-full max-h-[600px] md:max-h-[800px] object-contain rounded-xl md:rounded-2xl cursor-zoom-in hover:scale-[1.01] transition-transform"
                           onClick={() => setFullscreenImg(img)}
                           alt={`Topic img ${i + 1}`}
                         />
                       </div>
                     ))
                   ) : (
-                    <div className="flex flex-col items-center text-slate-300 font-medium text-sm gap-4 text-center">
-                      <ImageIcon className="w-16 h-16 opacity-30" />
+                    <div className="flex flex-col items-center text-slate-300 font-medium text-xs md:text-sm gap-3 text-center">
+                      <ImageIcon className="w-12 h-12 opacity-30" />
                       <span>尚未上傳議題視覺圖檔</span>
                     </div>
                   )}
@@ -1419,7 +1426,7 @@ const App = () => {
               </div>
 
               {/* Navigation Footer */}
-              <div className="mt-20 pt-10 border-t border-slate-200 flex justify-center items-center gap-8">
+              <div className="mt-16 pt-8 border-t border-slate-200 flex justify-center items-center gap-6 md:gap-8">
                 <button
                   onClick={() => {
                     const idx = config.topics.findIndex(
@@ -1428,7 +1435,7 @@ const App = () => {
                     if (idx > 0) setActivePage(config.topics[idx - 1].id);
                     else setActivePage("agenda");
                   }}
-                  className={`text-slate-400 font-bold text-sm hover:text-slate-800 transition-all`}
+                  className={`text-slate-400 font-bold text-[13px] md:text-sm hover:text-slate-800 transition-all`}
                 >
                   {config.topics.findIndex((t) => t.id === currentTopic.id) === 0
                     ? "← 回議程目錄"
@@ -1444,7 +1451,7 @@ const App = () => {
                       setActivePage(config.topics[idx + 1].id);
                     else setActivePage("summary");
                   }}
-                  className={`px-14 py-6 bg-[#0F172A] text-white rounded-[24px] font-bold text-base flex items-center gap-4 transition-all hover:-translate-y-1 hover:shadow-2xl active:scale-95 ${
+                  className={`px-10 py-4 md:px-12 md:py-5 bg-[#0F172A] text-white rounded-full md:rounded-[24px] font-bold text-[14px] md:text-[15px] flex items-center gap-3 transition-all hover:-translate-y-1 hover:shadow-xl active:scale-95 ${
                     currentTopic.status === "resolved"
                       ? "ring-4 ring-[#338F88]/30 animate-pulse"
                       : ""
@@ -1454,7 +1461,7 @@ const App = () => {
                   config.topics.length - 1
                     ? "結束 (看總覽)"
                     : "下一個議題"}{" "}
-                  <ArrowRight className="w-5 h-5" />
+                  <ArrowRight className="w-4 h-4 md:w-5 md:h-5" />
                 </button>
               </div>
             </div>
@@ -1477,7 +1484,7 @@ const App = () => {
       />
 
       <div
-        className={`fixed bottom-12 right-12 w-[460px] h-[80%] bg-white/95 backdrop-blur-3xl shadow-[0_40px_100px_-20px_rgba(0,0,0,0.4)] z-[100] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] rounded-[48px] border border-white flex flex-col overflow-hidden ${
+        className={`fixed bottom-12 right-12 w-[460px] h-[80%] bg-white/95 backdrop-blur-3xl shadow-[0_40px_100px_-20px_rgba(0,0,0,0.4)] z-[100] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] rounded-[40px] border border-white flex flex-col overflow-hidden ${
           isNotesOpen
             ? "translate-y-0 scale-100 opacity-100"
             : "translate-y-20 scale-90 opacity-0 pointer-events-none"
@@ -1485,7 +1492,7 @@ const App = () => {
       >
         {currentTopic && activePage !== "summary" && (
           <div className="h-full flex flex-col">
-            <div className="px-10 pt-10 pb-4 flex justify-between items-start">
+            <div className="px-8 pt-8 pb-3 flex justify-between items-start">
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-[10px] font-black text-[#338F88] tracking-widest uppercase">
@@ -1497,23 +1504,23 @@ const App = () => {
                     </div>
                   )}
                 </div>
-                <h3 className="text-2xl font-bold text-slate-800 tracking-tight">
+                <h3 className="text-xl font-bold text-slate-800 tracking-tight">
                   {currentTopic.title}
                 </h3>
               </div>
               <button
                 onClick={() => setIsNotesOpen(false)}
-                className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-100 text-slate-400 hover:text-slate-800 hover:bg-slate-200 transition-all"
+                className="w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 text-slate-400 hover:text-slate-800 hover:bg-slate-200 transition-all"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="flex-1 px-8 pb-4 mt-2">
-              <div className="w-full h-full bg-slate-50/70 rounded-[32px] shadow-[inset_0_2px_12px_rgba(0,0,0,0.05)] border border-slate-200/50 p-8 focus-within:bg-white focus-within:shadow-[inset_0_4px_20px_rgba(0,0,0,0.03)] transition-all">
+            <div className="flex-1 px-6 pb-4 mt-2">
+              <div className="w-full h-full bg-slate-50/70 rounded-[24px] shadow-[inset_0_2px_12px_rgba(0,0,0,0.05)] border border-slate-200/50 p-6 focus-within:bg-white focus-within:shadow-[inset_0_4px_20px_rgba(0,0,0,0.03)] transition-all">
                 <textarea
                   ref={notesRef}
-                  className="w-full h-full bg-transparent outline-none resize-none text-[18px] leading-[1.8] text-slate-700 font-medium placeholder:text-slate-300 no-scrollbar"
+                  className="w-full h-full bg-transparent outline-none resize-none text-[16px] leading-[1.8] text-slate-700 font-medium placeholder:text-slate-300 no-scrollbar"
                   value={currentTopic.notes || ""}
                   onChange={(e) => {
                     updateTopic(currentTopic.id, "notes", e.target.value);
@@ -1523,12 +1530,12 @@ const App = () => {
               </div>
             </div>
 
-            <div className="px-10 pb-10 pt-2 flex flex-wrap gap-2.5">
+            <div className="px-8 pb-8 pt-2 flex flex-wrap gap-2">
               {QUICK_TAGS.map((tag, i) => (
                 <button
                   key={i}
                   onClick={() => appendQuickTag(tag.prefix)}
-                  className={`px-5 py-2.5 rounded-2xl text-[11px] font-bold border backdrop-blur-sm transition-all shadow-sm active:scale-95 ${tag.color}`}
+                  className={`px-4 py-2 rounded-[12px] text-[11px] font-bold border backdrop-blur-sm transition-all shadow-sm active:scale-95 ${tag.color}`}
                 >
                   {tag.label}
                 </button>
@@ -1541,38 +1548,38 @@ const App = () => {
       {!isNotesOpen && activePage !== "cover" && activePage !== "agenda" && activePage !== "summary" && (
         <button
           onClick={() => setIsNotesOpen(true)}
-          className="fixed right-12 bottom-12 w-16 h-16 bg-[#0F172A] text-white rounded-full flex items-center justify-center shadow-[0_20px_40px_rgba(15,23,42,0.4)] z-40 hover:scale-110 hover:bg-[#1E293B] transition-all duration-300 group"
+          className="fixed right-10 bottom-10 w-14 h-14 bg-[#0F172A] text-white rounded-full flex items-center justify-center shadow-[0_20px_40px_rgba(15,23,42,0.4)] z-40 hover:scale-110 hover:bg-[#1E293B] transition-all duration-300 group"
         >
-          <Edit3 className="w-7 h-7 text-[#B89F5D] group-hover:rotate-12 transition-transform" />
+          <Edit3 className="w-6 h-6 text-[#B89F5D] group-hover:rotate-12 transition-transform" />
         </button>
       )}
 
       <div
-        className={`fixed inset-y-0 right-0 w-[460px] bg-white border-l border-slate-100 shadow-2xl z-[200] transition-all duration-500 ${
+        className={`fixed inset-y-0 right-0 w-[420px] bg-white border-l border-slate-100 shadow-2xl z-[200] transition-all duration-500 ${
           isConfigOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
         {tempConfig && (
           <div className="h-full flex flex-col">
-            <div className="p-8 bg-slate-50 border-b flex justify-between items-center">
-              <h3 className="text-2xl font-black text-slate-800">控制中心</h3>
+            <div className="p-6 bg-slate-50 border-b flex justify-between items-center">
+              <h3 className="text-xl font-black text-slate-800">控制中心</h3>
               <button
                 onClick={() => setIsConfigOpen(false)}
                 className="p-2 text-slate-400 hover:text-slate-900"
               >
-                <X className="w-6 h-6" />
+                <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar-light pb-32">
+            <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar-light pb-32">
               <div className="flex gap-3">
                 <button
                   onClick={exportConfigJSON}
-                  className="flex-1 flex items-center justify-center gap-2 py-4 bg-[#0F172A] text-white rounded-2xl text-sm font-bold hover:bg-slate-800 transition-colors shadow-lg"
+                  className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-[#0F172A] text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-colors shadow-lg"
                 >
-                  <FileDown className="w-4 h-4" /> 儲存專案 (JSON)
+                  <FileDown className="w-4 h-4" /> 儲存專案
                 </button>
-                <label className="flex-1 flex items-center justify-center gap-2 py-4 bg-[#B89F5D] text-white rounded-2xl text-sm font-bold cursor-pointer hover:bg-[#A68F50] transition-colors shadow-lg">
-                  <Upload className="w-4 h-4" /> 讀取專案 (JSON){" "}
+                <label className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-[#B89F5D] text-white rounded-xl text-xs font-bold cursor-pointer hover:bg-[#A68F50] transition-colors shadow-lg">
+                  <Upload className="w-4 h-4" /> 讀取專案
                   <input
                     type="file"
                     className="hidden"
@@ -1581,21 +1588,21 @@ const App = () => {
                   />
                 </label>
               </div>
-              <div className="space-y-6">
-                <span className="text-sm font-black text-slate-400 tracking-widest uppercase">
+              <div className="space-y-5">
+                <span className="text-[11px] font-black text-slate-400 tracking-widest uppercase">
                   基本會議設定
                 </span>
                 <div>
-                  <div className="flex justify-between items-end mb-2 ml-1">
-                    <label className="text-sm font-bold text-slate-500 block">
+                  <div className="flex justify-between items-end mb-1.5 ml-1">
+                    <label className="text-[13px] font-bold text-slate-500 block">
                       會議標題
                     </label>
-                    <span className="text-xs font-bold text-[#338F88]">
-                      字體大小: {tempConfig.cover?.titleFontSize || 80}px
+                    <span className="text-[11px] font-bold text-[#338F88]">
+                      字體大小: {tempConfig.cover?.titleFontSize || 64}px
                     </span>
                   </div>
                   <textarea
-                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-base font-bold outline-none h-24 resize-none focus:border-[#338F88] no-scrollbar mb-3"
+                    className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-[14px] font-bold outline-none h-20 resize-none focus:border-[#338F88] no-scrollbar mb-2.5"
                     value={tempConfig.cover?.title || ""}
                     placeholder="在此輸入會議標題 (按 Enter 可換行)"
                     onChange={(e) =>
@@ -1605,15 +1612,15 @@ const App = () => {
                       })
                     }
                   />
-                  <div className="flex items-center gap-3 px-2">
-                    <span className="text-xs text-slate-400 font-bold">小</span>
+                  <div className="flex items-center gap-3 px-1">
+                    <span className="text-[11px] text-slate-400 font-bold">小</span>
                     <input
                       type="range"
                       min="32"
-                      max="140"
+                      max="100"
                       step="2"
-                      className="flex-1 accent-[#338F88] h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer"
-                      value={tempConfig.cover?.titleFontSize || 80}
+                      className="flex-1 accent-[#338F88] h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                      value={tempConfig.cover?.titleFontSize || 64}
                       onChange={(e) =>
                         setTempConfig({
                           ...tempConfig,
@@ -1624,16 +1631,16 @@ const App = () => {
                         })
                       }
                     />
-                    <span className="text-xs text-slate-400 font-bold">大</span>
+                    <span className="text-[11px] text-slate-400 font-bold">大</span>
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm font-bold text-slate-500 ml-1 mb-2 block flex items-center gap-1.5">
-                    <Calendar className="w-4 h-4" /> 會議日期
+                  <label className="text-[13px] font-bold text-slate-500 ml-1 mb-1.5 flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5" /> 會議日期
                   </label>
                   <input
                     type="date"
-                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-base outline-none"
+                    className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-[14px] outline-none"
                     value={tempConfig.sessionDate || ""}
                     onChange={(e) =>
                       setTempConfig({
@@ -1644,11 +1651,11 @@ const App = () => {
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-bold text-slate-500 ml-1 mb-2 block flex items-center gap-1.5">
-                    <Users className="w-4 h-4" /> 與會人員 (以逗號分隔)
+                  <label className="text-[13px] font-bold text-slate-500 ml-1 mb-1.5 flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5" /> 與會人員 (以逗號分隔)
                   </label>
                   <input
-                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-base outline-none"
+                    className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-[14px] outline-none"
                     value={tempConfig.attendees || ""}
                     onChange={(e) =>
                       setTempConfig({
@@ -1659,19 +1666,19 @@ const App = () => {
                   />
                 </div>
               </div>
-              <div className="space-y-6">
+              <div className="space-y-5">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm font-black text-slate-400 tracking-widest uppercase">
+                  <span className="text-[11px] font-black text-slate-400 tracking-widest uppercase">
                     議題細節編排
                   </span>
                   <button
                     onClick={addTopic}
-                    className="text-sm font-bold text-[#338F88] hover:underline"
+                    className="text-[12px] font-bold text-[#338F88] hover:underline"
                   >
                     + 新增議題
                   </button>
                 </div>
-                <div className="space-y-6">
+                <div className="space-y-4">
                   {tempConfig.topics?.map((t, tidx) => {
                     const currentEditImages =
                       t.images?.length > 0
@@ -1683,22 +1690,22 @@ const App = () => {
                     return (
                       <div
                         key={t.id}
-                        className="p-6 bg-slate-50 rounded-3xl border border-slate-200 space-y-4 relative"
+                        className="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-3 relative"
                       >
-                        <div className="absolute top-5 right-14 flex gap-1">
+                        <div className="absolute top-4 right-12 flex gap-1">
                           <button
                             onClick={() => moveTopic(tidx, -1)}
                             disabled={tidx === 0}
-                            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-md disabled:opacity-30 disabled:hover:bg-transparent"
+                            className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded disabled:opacity-30 disabled:hover:bg-transparent"
                           >
-                            <ChevronUp className="w-5 h-5" />
+                            <ChevronUp className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => moveTopic(tidx, 1)}
                             disabled={tidx === tempConfig.topics.length - 1}
-                            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-md disabled:opacity-30 disabled:hover:bg-transparent"
+                            className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded disabled:opacity-30 disabled:hover:bg-transparent"
                           >
-                            <ChevronDown className="w-5 h-5" />
+                            <ChevronDown className="w-4 h-4" />
                           </button>
                         </div>
                         <button
@@ -1710,16 +1717,16 @@ const App = () => {
                               ),
                             })
                           }
-                          className="absolute top-6 right-6 text-slate-300 hover:text-red-500"
+                          className="absolute top-5 right-5 text-slate-300 hover:text-red-500"
                         >
-                          <Trash2 className="w-5 h-5" />
+                          <Trash2 className="w-4 h-4" />
                         </button>
 
-                        <span className="text-sm font-black text-slate-300 uppercase">
+                        <span className="text-[11px] font-black text-slate-300 uppercase">
                           {t.id}
                         </span>
                         <input
-                          className="w-full p-3.5 mt-2 bg-white border border-slate-200 rounded-xl text-base font-bold outline-none focus:border-[#338F88]"
+                          className="w-full p-3 mt-1.5 bg-white border border-slate-200 rounded-lg text-[14px] font-bold outline-none focus:border-[#338F88]"
                           value={t.title}
                           onChange={(e) => {
                             const next = [...tempConfig.topics];
@@ -1729,7 +1736,7 @@ const App = () => {
                           placeholder="議題名稱"
                         />
                         <textarea
-                          className="w-full p-4 bg-white border border-slate-200 rounded-xl text-[15px] leading-relaxed outline-none h-32 focus:border-[#338F88] resize-none"
+                          className="w-full p-3 bg-white border border-slate-200 rounded-lg text-[13px] leading-relaxed outline-none h-24 focus:border-[#338F88] resize-none"
                           value={t.desc}
                           onChange={(e) => {
                             const next = [...tempConfig.topics];
@@ -1739,12 +1746,12 @@ const App = () => {
                           placeholder="描述背景或細節..."
                         />
 
-                        <div className="pt-2 flex flex-wrap items-center gap-3">
+                        <div className="pt-1.5 flex flex-wrap items-center gap-2.5">
                           {currentEditImages.map((img, imgIdx) => (
                             <div key={imgIdx} className="relative group">
                               <img
                                 src={img}
-                                className="w-14 h-14 object-cover rounded-xl border border-slate-200"
+                                className="w-12 h-12 object-cover rounded-lg border border-slate-200"
                                 alt={`img-${imgIdx}`}
                               />
                               <button
@@ -1760,18 +1767,18 @@ const App = () => {
                                     topics: next,
                                   });
                                 }}
-                                className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                                className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
                               >
-                                <X className="w-3 h-3" />
+                                <X className="w-2.5 h-2.5" />
                               </button>
                             </div>
                           ))}
 
                           <label
-                            className="w-14 h-14 flex items-center justify-center bg-white border border-dashed border-slate-300 rounded-xl text-slate-400 hover:text-[#338F88] hover:border-[#338F88] cursor-pointer hover:bg-slate-50 transition-colors"
+                            className="w-12 h-12 flex items-center justify-center bg-white border border-dashed border-slate-300 rounded-lg text-slate-400 hover:text-[#338F88] hover:border-[#338F88] cursor-pointer hover:bg-slate-50 transition-colors"
                             title="上傳圖片 (可複選)"
                           >
-                            <Plus className="w-5 h-5" />
+                            <Plus className="w-4 h-4" />
                             <input
                               type="file"
                               multiple
@@ -1807,15 +1814,15 @@ const App = () => {
                               }}
                             />
                           </label>
-                          <span className="text-sm text-slate-400 font-bold uppercase tracking-wider ml-1">
-                            議題視覺圖檔
+                          <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider ml-1">
+                            視覺圖檔
                           </span>
                         </div>
 
-                        <div className="mt-4 pt-4 border-t border-slate-200 border-dashed space-y-2">
+                        <div className="mt-3 pt-3 border-t border-slate-200 border-dashed space-y-2">
                           <div className="flex justify-between items-center">
-                            <span className="text-sm font-bold text-slate-500 flex items-center gap-1.5">
-                              <ExternalLink className="w-4 h-4" /> 相關系統/文件連結
+                            <span className="text-[12px] font-bold text-slate-500 flex items-center gap-1.5">
+                              <ExternalLink className="w-3.5 h-3.5" /> 系統/文件連結
                             </span>
                             <button
                               onClick={() => {
@@ -1825,15 +1832,15 @@ const App = () => {
                                 next[tidx].systems.push({ name: "", url: "" });
                                 setTempConfig({ ...tempConfig, topics: next });
                               }}
-                              className="text-xs text-[#338F88] font-bold hover:underline"
+                              className="text-[11px] text-[#338F88] font-bold hover:underline"
                             >
-                              + 新增連結
+                              + 新增
                             </button>
                           </div>
                           {t.systems?.map((sys, sidx) => (
                             <div key={sidx} className="flex gap-2 items-center">
                               <input
-                                className="w-1/3 p-2 bg-white border border-slate-200 rounded-lg text-sm outline-none focus:border-[#338F88]"
+                                className="w-1/3 p-2 bg-white border border-slate-200 rounded-md text-[12px] outline-none focus:border-[#338F88]"
                                 placeholder="名稱 (如: Jira)"
                                 value={sys.name}
                                 onChange={(e) => {
@@ -1847,7 +1854,7 @@ const App = () => {
                                 }}
                               />
                               <input
-                                className="flex-1 p-2 bg-white border border-slate-200 rounded-lg text-sm outline-none focus:border-[#338F88]"
+                                className="flex-1 p-2 bg-white border border-slate-200 rounded-md text-[12px] outline-none focus:border-[#338F88]"
                                 placeholder="https://..."
                                 value={sys.url}
                                 onChange={(e) => {
@@ -1868,9 +1875,9 @@ const App = () => {
                                     topics: next,
                                   });
                                 }}
-                                className="p-1.5 text-slate-300 hover:text-red-500 rounded-md hover:bg-red-50"
+                                className="p-1.5 text-slate-300 hover:text-red-500 rounded hover:bg-red-50"
                               >
-                                <X className="w-4 h-4" />
+                                <X className="w-3.5 h-3.5" />
                               </button>
                             </div>
                           ))}
@@ -1881,10 +1888,10 @@ const App = () => {
                 </div>
               </div>
             </div>
-            <div className="p-8 border-t bg-white absolute bottom-0 left-0 right-0 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
+            <div className="p-6 border-t bg-white absolute bottom-0 left-0 right-0 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
               <button
                 onClick={applyConfig}
-                className="w-full py-5 bg-[#0F172A] text-white rounded-[20px] font-bold text-base tracking-widest shadow-2xl hover:bg-slate-800 transition-all active:scale-95"
+                className="w-full py-4 bg-[#0F172A] text-white rounded-[16px] font-bold text-[14px] tracking-widest shadow-xl hover:bg-slate-800 transition-all active:scale-95"
               >
                 更新會議配置
               </button>
