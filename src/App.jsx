@@ -387,7 +387,7 @@ const App = () => {
       const canvas = await window.html2canvas(target, {
         scale: 2,
         useCORS: true,
-        backgroundColor: "#FFFFFF",
+        backgroundColor: "#F8FAFC",
         windowWidth: 1440,
       });
       const link = document.createElement("a");
@@ -606,7 +606,7 @@ const App = () => {
     return (
       <div
         id="export-summary-target"
-        className="bg-white overflow-hidden text-slate-800 pb-32"
+        className="bg-[#F8FAFC] overflow-hidden text-slate-800 pb-32"
         style={{
           width: "1440px",
           fontFamily: FONT_FAMILY,
@@ -643,46 +643,39 @@ const App = () => {
         </div>
 
         <div className="px-24 py-20">
-          <div className="space-y-16">
+          <div className="space-y-12">
             {config.topics?.map((t, idx) => (
-              <div key={t.id} className="relative">
-                {idx !== 0 && (
-                  <div className="absolute -top-8 left-0 right-0 h-px bg-slate-200" />
-                )}
-                <div className="flex gap-8">
-                  <div className="w-24 shrink-0 pt-2">
-                    <span className="text-4xl font-black text-slate-200 font-mono tracking-tighter">
-                      {String(idx + 1).padStart(2, "0")}
+              <div key={t.id} className="relative bg-white rounded-[48px] p-12 border border-slate-200 shadow-sm flex flex-col md:flex-row gap-10 items-start">
+                <div className="text-[80px] leading-none font-black text-slate-100 w-32 shrink-0 font-mono tracking-tighter">
+                  {String(idx + 1).padStart(2, "0")}
+                </div>
+                <div className="flex-1 mt-2">
+                  <div className="flex items-center gap-4 mb-6">
+                    <span className="text-lg font-bold text-[#B89F5D] tracking-widest uppercase">
+                      {t.id}
+                    </span>
+                    <span
+                      className={`px-4 py-2 rounded-lg text-sm font-bold border ${
+                        t.status === "resolved"
+                          ? "bg-[#F2F9F8] text-[#338F88] border-[#338F88]/20"
+                          : "bg-[#FDF9F0] text-[#B89F5D] border-[#B89F5D]/20"
+                      }`}
+                    >
+                      {t.status === "resolved" ? "已決議" : "討論中"}
                     </span>
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-4 mb-4">
-                      <span className="text-sm font-bold text-[#B89F5D] tracking-widest uppercase">
-                        {t.id}
-                      </span>
-                      <h3 className="text-[28px] font-bold text-slate-800 leading-tight">
-                        {t.title}
-                      </h3>
-                      <span
-                        className={`px-4 py-1.5 rounded-full text-xs font-bold border ml-auto ${
-                          t.status === "resolved"
-                            ? "bg-[#F2F9F8] text-[#338F88] border-[#338F88]/20"
-                            : "bg-[#FDF9F0] text-[#B89F5D] border-[#B89F5D]/20"
-                        }`}
-                      >
-                        {t.status === "resolved" ? "已決議" : "討論中"}
-                      </span>
-                    </div>
-                    <div className="bg-[#F8FAFC] rounded-[32px] p-10 border border-slate-100">
-                      <div className="text-[22px] text-slate-700 leading-[1.8] font-medium whitespace-pre-wrap">
-                        {t.notes && t.notes.trim() !== "" ? (
-                          t.notes
-                        ) : (
-                          <span className="text-slate-400 italic">
-                            此議題尚未記錄筆記
-                          </span>
-                        )}
-                      </div>
+                  <h3 className="text-[36px] font-black text-slate-800 mb-8 leading-[1.2] tracking-tight">
+                    {t.title}
+                  </h3>
+                  <div className="bg-slate-50 rounded-[32px] p-10 border border-slate-100">
+                    <div className="text-[24px] text-slate-700 leading-[1.9] font-medium whitespace-pre-wrap">
+                      {t.notes && t.notes.trim() !== "" ? (
+                        t.notes
+                      ) : (
+                        <span className="text-slate-400 italic">
+                          此議題尚未記錄筆記
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -691,8 +684,8 @@ const App = () => {
           </div>
         </div>
 
-        <div className="text-center pb-12 pt-20 text-slate-400 mx-24 flex flex-col items-center gap-4 border-t border-slate-100">
-           <div className="w-12 h-1 bg-slate-200 rounded-full" />
+        <div className="text-center pb-12 pt-20 text-slate-400 mx-24 flex flex-col items-center gap-4 border-t border-slate-200">
+           <div className="w-12 h-1 bg-slate-300 rounded-full" />
           <div className="text-sm font-black tracking-[0.3em] uppercase opacity-50">
             Generated by Strategic Navigator
           </div>
@@ -743,9 +736,9 @@ const App = () => {
           isSidebarOpen ? "w-[320px]" : "w-[88px]"
         }`}
       >
-        <div className="py-6 flex-1 overflow-y-auto custom-scrollbar-dark flex flex-col items-center">
+        <div className="pt-10 pb-6 flex-1 overflow-y-auto custom-scrollbar-dark flex flex-col items-center">
           {/* Logo Area */}
-          <div className={`flex items-center mb-8 text-[#B89F5D] ${isSidebarOpen ? 'w-full px-8 gap-3 justify-start' : 'justify-center'}`}>
+          <div className={`flex items-center mb-10 text-[#B89F5D] ${isSidebarOpen ? 'w-full px-8 gap-3 justify-start' : 'w-full justify-center'}`}>
             <div className="w-5 h-5 bg-[#B89F5D] rounded-sm rotate-45 shrink-0" />
             <h1 className={`font-bold tracking-[0.2em] text-[10px] uppercase whitespace-nowrap transition-all duration-300 ${isSidebarOpen ? 'opacity-100 w-auto' : 'opacity-0 w-0 hidden'}`}>
               Strategic Navigator
@@ -754,11 +747,11 @@ const App = () => {
 
           {/* Time Area */}
           <div className={`mb-8 transition-all duration-300 ${isSidebarOpen ? 'w-full px-6' : 'w-full px-3'}`}>
-            <div className={`bg-white/5 border border-white/10 rounded-xl flex flex-col items-center justify-center ${isSidebarOpen ? 'p-3' : 'py-3'}`}>
+            <div className={`flex flex-col items-center justify-center transition-all ${isSidebarOpen ? 'bg-white/5 border border-white/10 rounded-xl p-4' : 'bg-white/5 rounded-xl py-3 px-1'}`}>
               <span className={`text-[10px] text-slate-500 font-bold uppercase tracking-widest transition-all duration-300 ${isSidebarOpen ? 'mb-1 block' : 'hidden'}`}>
                 Current Time
               </span>
-              <span className={`font-mono font-bold text-slate-200 tracking-wider transition-all duration-300 ${isSidebarOpen ? 'text-lg' : 'text-sm'}`}>
+              <span className={`font-mono font-bold text-slate-200 tracking-wider transition-all duration-300 ${isSidebarOpen ? 'text-xl' : 'text-[12px]'}`}>
                 {currentTime.toLocaleTimeString("zh-TW", {
                   hour: "2-digit",
                   minute: "2-digit",
@@ -893,7 +886,7 @@ const App = () => {
 
       <main
         ref={scrollContainerRef}
-        className={`flex-1 relative overflow-y-auto custom-scrollbar-light bg-white transition-all duration-500 ${
+        className={`flex-1 relative overflow-y-auto custom-scrollbar-light bg-slate-50 transition-all duration-500 ${
           isNotesOpen ? "rounded-l-[48px] shadow-2xl" : ""
         }`}
       >
@@ -1167,7 +1160,7 @@ const App = () => {
                     </div>
                   ))
                 ) : (
-                  <div className="py-24 text-center text-slate-400 font-medium bg-slate-50 rounded-[40px] border border-dashed border-slate-300">
+                  <div className="py-24 text-center text-slate-400 font-medium bg-white rounded-[40px] border border-dashed border-slate-300">
                     <ClipboardList className="w-12 h-12 mx-auto mb-4 opacity-50 text-slate-400" />
                     <p className="text-lg">
                       尚未建立任何議題
@@ -1195,23 +1188,18 @@ const App = () => {
           )}
 
           {activePage === "summary" && (
-            <div className="min-h-screen p-8 md:p-12 lg:p-16 mx-auto w-full max-w-[900px] transition-all flex flex-col pb-32 animate-in fade-in duration-500">
-              <div className="flex items-center justify-between mb-10 border-b border-slate-100 pb-8">
-                <div>
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-8 h-1 bg-[#B89F5D] rounded-full" />
-                    <span className="text-[#B89F5D] font-black tracking-[0.4em] text-[10px] uppercase">
-                      Executive Summary
-                    </span>
-                  </div>
-                  <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">
-                    會議決議與筆記總覽
-                  </h2>
+            <div className="min-h-screen p-8 md:p-12 lg:p-20 mx-auto w-full max-w-[1200px] transition-all flex flex-col justify-center animate-in fade-in duration-500">
+              <div className="flex items-center justify-between mb-12">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-1 bg-[#B89F5D] rounded-full" />
+                  <span className="text-[#B89F5D] font-black tracking-[0.4em] text-xs uppercase">
+                    Executive Summary
+                  </span>
                 </div>
                 <button
                   onClick={() => handleExportSummary()}
                   disabled={isExporting}
-                  className="px-5 py-2.5 bg-[#0F172A] text-white rounded-[12px] text-xs font-bold flex items-center gap-2 hover:bg-slate-800 transition-all shadow-md active:scale-95 group"
+                  className="px-5 py-2.5 bg-[#0F172A] text-white rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-slate-800 transition-all shadow-md active:scale-95 group"
                 >
                   <FileDown
                     className={`w-4 h-4 ${
@@ -1226,54 +1214,65 @@ const App = () => {
                 </button>
               </div>
 
-              <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm p-8 md:p-12">
-                {config.topics?.length > 0 ? (
-                  <div className="space-y-10 relative">
-                    <div className="absolute left-[11px] top-4 bottom-4 w-px bg-slate-100" />
-                    
-                    {config.topics.map((t, idx) => (
-                      <div
-                        key={t.id}
-                        onClick={() => setActivePage(t.id)}
-                        className="relative pl-10 group cursor-pointer"
-                      >
-                        <div className="absolute left-[4px] top-1.5 w-4 h-4 rounded-full bg-white border-2 border-slate-200 group-hover:border-[#338F88] transition-colors flex items-center justify-center z-10">
-                           <div className={`w-1.5 h-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity ${t.status === 'resolved' ? 'bg-[#338F88]' : 'bg-[#B89F5D]'}`} />
-                        </div>
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-slate-900 mb-10 lg:mb-12 leading-tight tracking-tighter">
+                會議決議與筆記總覽
+              </h2>
 
-                        <div className="flex flex-col gap-3">
-                          <div className="flex items-center gap-3">
-                            <span className="text-xl md:text-[22px] font-bold text-slate-800 group-hover:text-[#338F88] transition-colors">
-                              {String(idx + 1).padStart(2, "0")}. {t.title}
+              <div className="space-y-6 w-full">
+                {config.topics?.length > 0 ? (
+                  config.topics.map((t, idx) => (
+                    <div
+                      key={t.id}
+                      onClick={() => setActivePage(t.id)}
+                      className="group p-10 md:p-12 bg-white border border-slate-200 rounded-[32px] hover:border-[#338F88] hover:shadow-2xl transition-all duration-300 cursor-pointer flex flex-col md:flex-row gap-8 md:items-start relative overflow-hidden"
+                    >
+                      <div className="absolute left-0 top-0 bottom-0 w-2 bg-transparent group-hover:bg-[#338F88] transition-colors" />
+
+                      <div className="text-[64px] leading-none font-black text-slate-100 group-hover:text-[#338F88]/10 transition-colors w-24 shrink-0 font-mono tracking-tighter">
+                        {String(idx + 1).padStart(2, "0")}
+                      </div>
+
+                      <div className="flex-1 mt-2">
+                        <div className="flex items-center gap-4 mb-5">
+                          <span className="text-sm font-bold text-[#B89F5D] tracking-widest uppercase">
+                            {t.id}
+                          </span>
+                          <span
+                            className={`px-3 py-1.5 rounded-md text-[11px] font-bold ${
+                              t.status === "resolved"
+                                ? "bg-[#338F88]/10 text-[#338F88]"
+                                : "bg-slate-100 text-slate-500"
+                            }`}
+                          >
+                            {t.status === "resolved" ? "已決議" : "討論中"}
+                          </span>
+                        </div>
+                        <h3 className="text-2xl md:text-[28px] font-bold text-slate-900 mb-6 group-hover:text-[#338F88] transition-colors leading-[1.2] tracking-tight">
+                          {t.title}
+                        </h3>
+                        
+                        <div className="bg-slate-50/80 rounded-2xl p-6 md:p-8 border border-slate-100 group-hover:bg-[#FDFDFD] group-hover:border-[#338F88]/20 transition-all text-[16px] md:text-[18px] leading-[1.9] text-slate-700 whitespace-pre-wrap font-medium">
+                          {t.notes && t.notes.trim() !== "" ? (
+                            t.notes
+                          ) : (
+                            <span className="text-slate-400 italic font-normal text-sm">
+                              尚未記錄任何討論筆記...
                             </span>
-                            <span
-                              className={`px-2 py-1 rounded-md text-[9px] font-bold ${
-                                t.status === "resolved"
-                                  ? "bg-[#F2F9F8] text-[#338F88]"
-                                  : "bg-slate-100 text-slate-500"
-                              }`}
-                            >
-                              {t.status === "resolved" ? "已決議" : "討論中"}
-                            </span>
-                          </div>
-                          
-                          <div className="bg-slate-50/80 rounded-2xl p-5 border border-slate-100 group-hover:border-[#338F88]/30 group-hover:bg-[#FDFDFD] transition-all text-[15px] leading-[1.8] text-slate-700 whitespace-pre-wrap font-medium">
-                            {t.notes && t.notes.trim() !== "" ? (
-                              t.notes
-                            ) : (
-                              <span className="text-slate-400 italic font-normal text-sm">
-                                尚未記錄任何討論筆記...
-                              </span>
-                            )}
-                          </div>
+                          )}
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))
                 ) : (
-                  <div className="py-16 text-center text-slate-400 font-medium">
-                    <ClipboardList className="w-12 h-12 mx-auto mb-4 opacity-30 text-slate-300" />
-                    <p className="text-sm">尚未建立任何議題</p>
+                  <div className="py-24 text-center text-slate-400 font-medium bg-white rounded-[40px] border border-dashed border-slate-300">
+                    <ClipboardList className="w-12 h-12 mx-auto mb-4 opacity-50 text-slate-400" />
+                    <p className="text-lg">
+                      尚未建立任何議題
+                      <br />
+                      <span className="text-sm mt-2 block">
+                        請點擊右上角設定按鈕新增
+                      </span>
+                    </p>
                   </div>
                 )}
               </div>
@@ -1288,7 +1287,7 @@ const App = () => {
             >
               {/* Toolbar */}
               <div className="flex items-center justify-between mb-16">
-                <span className="px-5 py-2 rounded-full bg-slate-50 border border-slate-100 text-[11px] font-black text-slate-400 tracking-widest uppercase">
+                <span className="px-5 py-2 rounded-full bg-white border border-slate-200 text-[11px] font-black text-slate-400 tracking-widest uppercase">
                   {currentTopic.id}
                 </span>
                 <div className="flex gap-4 items-center">
@@ -1309,14 +1308,14 @@ const App = () => {
                       : "匯出此議題"}
                   </button>
                   <div className="w-px h-6 bg-slate-200" />
-                  <div className="flex gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-200 shadow-sm">
+                  <div className="flex gap-2 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm">
                     <button
                       onClick={() =>
                         updateTopic(currentTopic.id, "status", "discussing")
                       }
                       className={`px-5 py-2 rounded-xl text-xs font-bold transition-all ${
                         currentTopic.status === "discussing"
-                          ? "bg-white shadow-sm text-amber-600"
+                          ? "bg-slate-50 shadow-sm text-amber-600"
                           : "text-slate-400 hover:text-slate-600"
                       }`}
                     >
@@ -1350,7 +1349,7 @@ const App = () => {
                     <Layout className="w-5 h-5" />
                     <span className="text-xs font-black tracking-widest uppercase">Context & Description</span>
                   </div>
-                  <div className="border-l-4 border-[#B89F5D] bg-slate-50 rounded-r-2xl p-8 md:p-10 shadow-sm transition-all hover:bg-slate-100">
+                  <div className="border-l-4 border-[#B89F5D] bg-white rounded-r-2xl p-8 md:p-10 shadow-sm transition-all hover:bg-slate-50/50">
                     <div className="text-[18px] md:text-[20px] text-slate-700 leading-[2] whitespace-pre-wrap font-medium">
                       {currentTopic.desc}
                     </div>
@@ -1359,8 +1358,8 @@ const App = () => {
               )}
 
               {/* Visual Assets Block - Redesigned to separate content properly */}
-              <div className="bg-slate-50 rounded-[48px] p-2 overflow-hidden border border-slate-200 shadow-sm mb-20">
-                <div className="px-8 lg:px-10 py-6 flex flex-wrap items-center justify-between border-b border-slate-200/50 gap-4">
+              <div className="bg-white rounded-[48px] p-2 overflow-hidden border border-slate-200 shadow-sm mb-20">
+                <div className="px-8 lg:px-10 py-6 flex flex-wrap items-center justify-between border-b border-slate-100 gap-4">
                   <div className="flex items-center gap-2">
                     <ImageIcon className="w-5 h-5 text-slate-400" />
                     <span className="text-xs font-black text-slate-400 tracking-widest uppercase">
@@ -1375,7 +1374,7 @@ const App = () => {
                           href={s.url}
                           target="_blank"
                           rel="noreferrer"
-                          className="px-3.5 py-1.5 bg-white border border-slate-200 rounded-lg text-[13px] font-bold text-slate-600 hover:border-[#338F88] hover:text-[#338F88] transition-all flex items-center gap-1.5 shadow-sm"
+                          className="px-3.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[13px] font-bold text-slate-600 hover:border-[#338F88] hover:text-[#338F88] transition-all flex items-center gap-1.5 shadow-sm"
                         >
                           {s.name} <ExternalLink className="w-3.5 h-3.5" />
                         </a>
@@ -1384,12 +1383,12 @@ const App = () => {
                   )}
                 </div>
 
-                <div className="min-h-[400px] bg-white rounded-[40px] flex flex-col items-center justify-center p-8 lg:p-12 gap-16 relative">
+                <div className="min-h-[400px] bg-slate-50/50 rounded-[40px] flex flex-col items-center justify-center p-8 lg:p-12 gap-16 relative">
                   {currentTopicImages.length > 0 ? (
                     currentTopicImages.map((img, i) => (
                       <div
                         key={i}
-                        className="w-full flex flex-col items-center group relative bg-slate-50 rounded-[32px] p-6 border border-slate-100 shadow-sm"
+                        className="w-full flex flex-col items-center group relative bg-white rounded-[32px] p-6 border border-slate-100 shadow-sm"
                       >
                         {currentTopicImages.length > 1 && (
                           <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#0F172A] text-white px-5 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase shadow-md">
@@ -1414,7 +1413,7 @@ const App = () => {
               </div>
 
               {/* Navigation Footer */}
-              <div className="mt-20 pt-10 border-t border-slate-100 flex justify-center items-center gap-8">
+              <div className="mt-20 pt-10 border-t border-slate-200 flex justify-center items-center gap-8">
                 <button
                   onClick={() => {
                     const idx = config.topics.findIndex(
@@ -1890,7 +1889,7 @@ const App = () => {
 
       {fullscreenImg && (
         <div
-          onClick={() => setFullscreenImg(null)}
+          onClick={() => setFullsacreenImg(null)}
           className="fixed inset-0 bg-[#0A0F1C]/98 backdrop-blur-xl z-[1000] flex items-center justify-center p-12 cursor-zoom-out animate-in fade-in duration-300"
         >
           <img
