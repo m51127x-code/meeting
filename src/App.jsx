@@ -40,7 +40,7 @@ const FONT_FAMILY =
   '"Noto Sans TC", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif';
 
 const INITIAL_CLEAN_CONFIG = {
-  cover: { title: "", desc: "", titleFontSize: 64 },
+  cover: { title: "", desc: "", titleFontSize: 72 },
   attendees: "",
   topics: [],
   sessionDate: "",
@@ -485,7 +485,7 @@ const App = () => {
             <h1
               className="font-black max-w-3xl leading-tight whitespace-pre-wrap"
               style={{
-                fontSize: displayConfig.cover?.titleFontSize ? `${displayConfig.cover.titleFontSize * 0.8}px` : '48px'
+                fontSize: displayConfig.cover?.titleFontSize ? `${displayConfig.cover.titleFontSize * 0.9}px` : '56px'
               }}
             >
               {config.cover?.title || "未命名戰略會議"}
@@ -518,7 +518,7 @@ const App = () => {
           </div>
 
           {/* Title with Highlighter */}
-          <h2 className="text-[48px] font-black text-slate-900 leading-[1.3] tracking-tight mb-12">
+          <h2 className="text-[56px] font-black text-slate-900 leading-[1.3] tracking-tight mb-12">
             <span className="relative inline-block px-2">
               <span className="absolute bottom-[10%] left-[-2%] w-[104%] h-[40%] bg-[#FCEBAF] rounded-sm transform -rotate-1 z-0 shadow-[0_4px_12px_rgba(252,235,175,0.4)]"></span>
               <span className="relative z-10">{t.title}</span>
@@ -625,7 +625,7 @@ const App = () => {
             <h1
               className="font-bold max-w-3xl leading-tight whitespace-pre-wrap"
               style={{
-                fontSize: displayConfig.cover?.titleFontSize ? `${displayConfig.cover.titleFontSize * 0.8}px` : '48px'
+                fontSize: displayConfig.cover?.titleFontSize ? `${displayConfig.cover.titleFontSize * 0.9}px` : '56px'
               }}
             >
               {config.cover?.title || "未命名戰略會議"} - 筆記總覽
@@ -663,7 +663,7 @@ const App = () => {
                       {t.status === "resolved" ? "已決議" : "討論中"}
                     </span>
                   </div>
-                  <h3 className="text-[26px] font-black text-slate-800 mb-6 leading-[1.3] tracking-tight">
+                  <h3 className="text-[32px] font-black text-slate-800 mb-6 leading-[1.3] tracking-tight">
                     {t.title}
                   </h3>
                   <div className="bg-slate-50 rounded-[24px] p-8 border border-slate-100">
@@ -976,9 +976,9 @@ const App = () => {
                   <h1
                     className="font-bold mb-8 tracking-tight leading-[1.2] drop-shadow-lg break-words whitespace-pre-wrap transition-all duration-300"
                     style={{
-                      fontSize: `clamp(32px, ${
-                        displayConfig.cover?.titleFontSize || 64
-                      }px, 64px)`, // Added upper clamp to prevent insane sizing
+                      fontSize: `clamp(36px, ${
+                        displayConfig.cover?.titleFontSize || 72
+                      }px, 88px)`, // Adjusted upper clamp and defaults for bigger titles
                     }}
                   >
                     {displayConfig.cover?.title || "未命名會議"}{" "}
@@ -1085,7 +1085,7 @@ const App = () => {
                 </span>
               </div>
 
-              <h2 className="text-3xl md:text-[40px] font-black text-slate-900 mb-10 leading-tight tracking-tighter">
+              <h2 className="text-[36px] md:text-[48px] font-black text-slate-900 mb-10 leading-tight tracking-tighter">
                 議程目錄
               </h2>
 
@@ -1118,7 +1118,7 @@ const App = () => {
                             {t.status === "resolved" ? "已決議" : "討論中"}
                           </span>
                         </div>
-                        <h3 className="text-xl md:text-[24px] font-bold text-slate-900 mb-3 group-hover:text-[#338F88] transition-colors leading-[1.3] tracking-tight">
+                        <h3 className="text-[22px] md:text-[28px] lg:text-[32px] font-bold text-slate-900 mb-3 group-hover:text-[#338F88] transition-colors leading-[1.3] tracking-tight">
                           {t.title}
                         </h3>
                         <p className="text-[15px] md:text-[16px] text-slate-600 font-medium whitespace-pre-wrap leading-[1.8] max-w-3xl opacity-90">
@@ -1226,7 +1226,7 @@ const App = () => {
                 </button>
               </div>
 
-              <h2 className="text-3xl md:text-[40px] font-black text-slate-900 mb-10 leading-tight tracking-tighter">
+              <h2 className="text-[36px] md:text-[48px] font-black text-slate-900 mb-10 leading-tight tracking-tighter">
                 會議決議與筆記總覽
               </h2>
 
@@ -1259,7 +1259,7 @@ const App = () => {
                             {t.status === "resolved" ? "已決議" : "討論中"}
                           </span>
                         </div>
-                        <h3 className="text-xl md:text-[24px] font-bold text-slate-900 mb-4 group-hover:text-[#338F88] transition-colors leading-[1.3] tracking-tight">
+                        <h3 className="text-[22px] md:text-[28px] lg:text-[32px] font-bold text-slate-900 mb-4 group-hover:text-[#338F88] transition-colors leading-[1.3] tracking-tight">
                           {t.title}
                         </h3>
                         
@@ -1348,7 +1348,7 @@ const App = () => {
               </div>
 
               {/* Title Section (with Highlighter) */}
-              <h2 className="text-[32px] md:text-[40px] font-black text-slate-900 mb-10 leading-[1.3] tracking-tight">
+              <h2 className="text-[36px] md:text-[48px] lg:text-[56px] font-black text-slate-900 mb-10 leading-[1.3] tracking-tight">
                 <span className="relative inline-block px-2">
                   <span className="absolute bottom-[10%] left-[-2%] w-[104%] h-[40%] bg-[#FCEBAF] rounded-sm transform -rotate-1 z-0 shadow-[0_4px_12px_rgba(252,235,175,0.4)]"></span>
                   <span className="relative z-10">{currentTopic.title}</span>
@@ -1598,7 +1598,7 @@ const App = () => {
                       會議標題
                     </label>
                     <span className="text-[11px] font-bold text-[#338F88]">
-                      字體大小: {tempConfig.cover?.titleFontSize || 64}px
+                      字體大小: {tempConfig.cover?.titleFontSize || 72}px
                     </span>
                   </div>
                   <textarea
@@ -1617,10 +1617,10 @@ const App = () => {
                     <input
                       type="range"
                       min="32"
-                      max="100"
+                      max="120"
                       step="2"
                       className="flex-1 accent-[#338F88] h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer"
-                      value={tempConfig.cover?.titleFontSize || 64}
+                      value={tempConfig.cover?.titleFontSize || 72}
                       onChange={(e) =>
                         setTempConfig({
                           ...tempConfig,
