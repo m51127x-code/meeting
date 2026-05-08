@@ -1023,21 +1023,8 @@ const App = () => {
             <Printer className="w-4 h-4" /> 匯出 PDF
           </button>
         </div>
-          )}
-          
-          {/* Subtle Settings Button always visible */}
-          <button
-            onClick={openConfig}
-            className={`w-11 h-11 flex items-center justify-center rounded-xl transition-all shadow-sm ${
-              activePage === "cover"
-                ? "bg-white/5 border border-transparent text-white/30 hover:bg-white/10 hover:text-white/80"
-                : "bg-white/90 backdrop-blur-md border border-slate-200 hover:border-[#338F88] text-slate-500 hover:text-[#338F88]"
-            }`}
-            title="設定專案"
-          >
-            <Settings className="w-5 h-5" />
-          </button>
-        </div>
+
+        <div className="flex-1 w-full relative">
 
         <div className="flex-1 w-full relative">
           {activePage === "cover" && (
