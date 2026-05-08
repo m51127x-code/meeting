@@ -54,7 +54,7 @@ const QUICK_TAGS = [
 
 const App = () => {
   // ==========================================
-  // [模式判斷]：與會者唯讀模式 & 會議 ID
+  // [狀態管理與模式判斷]
   // ==========================================
   const urlParams = new URLSearchParams(window.location.search);
   const isViewer = urlParams.get("mode") === "viewer";
@@ -76,9 +76,7 @@ const App = () => {
     sessionStorage.setItem("strategyMeetingData", JSON.stringify(config));
   }, [config]);
 
-  // ==========================================
   // [與會者] 載入雲端資料
-  // ==========================================
   useEffect(() => {
     if (isViewer && meetingId) {
       fetch(`/api/get?id=${meetingId}`)
@@ -103,7 +101,6 @@ const App = () => {
   const [exportingTopicId, setExportingTopicId] = useState(null);
   const [selectedTopics, setSelectedTopics] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
-  const [scaleValue, setScaleValue] = useState(1);
   const [tempConfig, setTempConfig] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -138,18 +135,6 @@ const App = () => {
   };
 
   useEffect(() => {
-    const handleResize = () => {
-      const sidebarWidth = isSidebarOpen ? 320 : 88;
-      const notesWidth = isNotesOpen ? 460 : 0;
-      const availableWidth = window.innerWidth - sidebarWidth - notesWidth;
-      setScaleValue(Math.min(1, availableWidth / 1440));
-    };
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [isNotesOpen, isSidebarOpen]);
-
-  useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
@@ -182,7 +167,6 @@ const App = () => {
     setIsConfigOpen(false);
   };
 
-  // 產生分享連結
   const generateShareLink = async () => {
     setIsGeneratingLink(true);
     try {
@@ -200,7 +184,7 @@ const App = () => {
       if (result.id) {
         const link = `${window.location.origin}/?mode=viewer&id=${result.id}`;
         navigator.clipboard.writeText(link);
-        alert("✅ 已產生唯讀分享連結，並自動複製到剪貼簿！\n您可以直接分享給與會者。");
+        alert("✅ 已產生唯讀分享連結，並自動複製到剪貼簿！");
       } else {
         throw new Error("無法獲取會議 ID。");
       }
@@ -213,7 +197,7 @@ const App = () => {
   };
 
   const handlePrintPDF = () => {
-    alert("【列印完美 PDF 提示】\n\n列印畫面跳出時，請確認：\n1. 配置 (Layout)：選擇「橫向 (Landscape)」\n2. 選項 (Options)：勾選「背景圖形 (Background graphics)」\n\n如此即可印出 100% 完美的彩排簡報！");
+    alert("【列印完美 PDF 提示】\n\n1. 配置 (Layout)：選擇「橫向 (Landscape)」\n2. 選項 (Options)：勾選「背景圖形 (Background graphics)」\n\n這樣才能印出 100% 完美的簡報喔！");
     setTimeout(() => {
       window.print();
     }, 500);
@@ -368,7 +352,7 @@ const App = () => {
   const currentTopicImages = currentTopic?.images?.length > 0 ? currentTopic.images : currentTopic?.previewContent ? [currentTopic.previewContent] : [];
   const displayConfig = isConfigOpen && tempConfig ? tempConfig : config;
 
-  // --- 獨立長圖匯出 View (隱藏渲染區，供單張圖檔打包使用) ---
+  // --- 獨立長圖匯出 View (隱藏渲染區，供 html2canvas 使用) ---
   const renderSingleTopicExport = (t) => {
     if (!t) return null;
     const exportImgs = t.images?.length > 0 ? t.images : t.previewContent ? [t.previewContent] : [];
@@ -453,9 +437,7 @@ const App = () => {
         }
       `}</style>
 
-      {/* ---------------------------------------------------- */}
       {/* 區塊一：網頁實際操作介面 (列印時完全隱藏) */}
-      {/* ---------------------------------------------------- */}
       <div className="h-screen flex overflow-hidden bg-[#0A0F1C] text-slate-800 print:hidden" style={{ fontFamily: FONT_FAMILY }}>
         
         {/* Sidebar 側邊欄 */}
@@ -507,6 +489,7 @@ const App = () => {
                 </div>
               </div>
 
+              {/* 側欄左下角：方塊按鈕 (並排) */}
               <div className={`mt-auto pt-4 pb-6 border-t border-slate-800/50 flex ${isSidebarOpen ? 'flex-row' : 'flex-col'} gap-3 px-4 w-full`}>
                 {!isViewer && (
                   <button onClick={generateShareLink} disabled={isGeneratingLink} className={`flex-1 py-3 rounded-xl border border-slate-700/50 bg-[#0F172A] text-slate-400 hover:bg-[#338F88]/10 hover:border-[#338F88]/40 hover:text-[#338F88] transition-all flex flex-col items-center justify-center gap-1.5 shadow-sm disabled:opacity-50`} title="產生唯讀分享連結">
@@ -526,23 +509,12 @@ const App = () => {
         {/* Main Content 主視圖 */}
         <main ref={scrollContainerRef} className={`flex-1 relative overflow-y-auto custom-scrollbar-light transition-all duration-500 ${activePage === "cover" ? "bg-[#0A0F1C]" : "bg-slate-50"} ${isNotesOpen ? "rounded-l-[48px] shadow-2xl" : ""}`}>
           
+          {/* 右上角極簡設定 */}
           {!isViewer && (
             <div className="fixed top-8 right-8 z-50 flex items-center gap-3">
               <button onClick={openConfig} className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all shadow-sm opacity-50 hover:opacity-100 backdrop-blur-sm ${activePage === "cover" ? "bg-white/10 text-slate-300 hover:bg-white/20 hover:text-white" : "bg-white text-slate-400 border border-slate-200 hover:text-slate-800 hover:border-slate-300"}`} title="打開控制中心設定">
                 <Settings className="w-4 h-4" />
               </button>
-            </div>
-          )}
-
-          {selectedTopics.length > 0 && activePage === "agenda" && (
-            <div className="fixed top-8 right-24 z-50 flex items-center gap-4 bg-[#0F172A] text-white px-5 h-11 rounded-xl shadow-xl border border-slate-800 animate-in slide-in-from-right-8 fade-in duration-300">
-              <span className="text-[13px] font-bold flex items-center">已選取 <span className="text-[#B89F5D] mx-1.5 text-[15px]">{selectedTopics.length}</span> 項</span>
-              <div className="w-px h-4 bg-white/20" />
-              <button onClick={handleBatchExportZIP} disabled={isExporting} className="text-[13px] font-bold hover:text-[#B89F5D] flex items-center gap-1.5 transition-colors disabled:opacity-50">
-                <FileDown className={`w-4 h-4 ${isExporting ? "animate-pulse" : ""}`} /> 
-                {isExporting ? "處理中..." : "打包圖檔 ZIP"}
-              </button>
-              <button onClick={() => setSelectedTopics([])} disabled={isExporting} className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-slate-300 hover:bg-white/20 hover:text-white transition-colors ml-1 disabled:opacity-50" title="取消選取"><X className="w-3 h-3" /></button>
             </div>
           )}
 
@@ -581,12 +553,6 @@ const App = () => {
                           <div className="w-16 h-16 xl:w-20 xl:h-20 bg-gradient-to-tr from-[#B89F5D] to-[#FCEBAF] rounded-xl shadow-[0_0_40px_rgba(252,235,175,0.3)] animate-pulse" />
                         </div>
                       </div>
-                      <div className="absolute top-4 -right-4 xl:top-8 xl:-right-6 bg-[#0F172A]/90 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-xl transform hover:-translate-y-1 transition-transform">
-                        <span className="text-[10px] text-slate-400 font-bold tracking-widest uppercase block mb-1.5">System Status</span><span className="text-[13px] font-bold text-[#338F88] flex items-center gap-2"><div className="w-2 h-2 bg-[#338F88] rounded-full animate-ping" /> Synchronized</span>
-                      </div>
-                      <div className="absolute bottom-8 -left-4 xl:bottom-12 xl:-left-6 bg-[#0F172A]/90 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-xl transform hover:-translate-y-1 transition-transform">
-                        <span className="text-[10px] text-slate-400 font-bold tracking-widest uppercase block mb-1.5">Active Workspace</span><span className="text-[13px] font-bold text-white flex items-center gap-2"><Layout className="w-3.5 h-3.5 text-[#B89F5D]" /> Board Ready</span>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -613,19 +579,13 @@ const App = () => {
                         <h3 className="text-[22px] md:text-[28px] lg:text-[32px] font-bold text-slate-900 mb-3 group-hover:text-[#338F88] transition-colors leading-[1.3] tracking-tight">{t.title}</h3>
                         <p className="text-[15px] md:text-[16px] text-slate-600 font-medium whitespace-pre-wrap leading-[1.8] max-w-3xl opacity-90">{t.desc || "無議題描述"}</p>
                       </div>
-                      <div className="shrink-0 mt-4 md:mt-2 flex items-center gap-3">
-                        <button onClick={(e) => { e.stopPropagation(); setSelectedTopics((prev) => prev.includes(t.id) ? prev.filter((id) => id !== t.id) : [...prev, t.id] ); }} className={`w-9 h-9 rounded-lg border-2 flex items-center justify-center transition-all shadow-sm ${selectedTopics.includes(t.id) ? "bg-[#338F88] border-[#338F88] text-white" : "bg-white border-slate-200 text-transparent hover:border-[#338F88]/50 hover:bg-[#FDF9F0]"}`} title="選取以批次匯出"><Check className="w-4 h-4" /></button>
-                        <div className="w-px h-6 bg-slate-200" />
-                        <button onClick={(e) => { e.stopPropagation(); handleExportImage(t.id); }} className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all shadow-sm ${isExporting && exportingTopicId === t.id ? "bg-[#0F172A] text-[#B89F5D] border-[#0F172A] animate-pulse" : "bg-white border-slate-200 text-slate-400 hover:text-[#B89F5D] hover:border-[#B89F5D] hover:bg-[#FDF9F0]"}`} title="匯出此議題長圖"><FileDown className="w-4 h-4" /></button>
-                        <div className="w-10 h-10 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center group-hover:bg-[#338F88] group-hover:text-white group-hover:border-[#338F88] transition-all shadow-sm" title="進入議題"><ArrowRight className="w-4 h-4" /></div>
-                      </div>
                     </div>
                   )) : (<div className="py-20 text-center text-slate-400 font-medium bg-white rounded-[32px] border border-dashed border-slate-300">尚未建立任何議題</div>)}
                 </div>
               </div>
             )}
 
-            {currentTopic && activePage !== "agenda" && activePage !== "cover" && (
+            {currentTopic && activePage !== "agenda" && activePage !== "cover" && activePage !== "summary" && (
               <div className={`px-8 md:px-16 pt-32 pb-48 mx-auto w-full max-w-[1000px] xl:max-w-[1200px] transition-all`}>
                 <div className="flex flex-wrap items-center justify-between gap-4 mb-12">
                   <span className="px-4 py-1.5 rounded-full bg-white border border-slate-200 text-[10px] md:text-[11px] font-black text-slate-400 tracking-widest uppercase shadow-sm">{currentTopic.id}</span>
@@ -689,10 +649,13 @@ const App = () => {
                 </div>
               </div>
             )}
+            
+            {/* 隱藏的長圖匯出區塊 */}
             {renderSingleTopicExport(config.topics.find((t) => t.id === exportingTopicId) || currentTopic)}
           </div>
         </main>
 
+        {/* 筆記與控制台等 UI 元件 */}
         <div className={`fixed inset-0 bg-slate-900/20 backdrop-blur-[4px] z-[90] transition-all duration-500 ${isNotesOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`} onClick={() => setIsNotesOpen(false)} />
         <div className={`fixed bottom-12 right-12 w-[460px] h-[80%] bg-white/95 backdrop-blur-3xl shadow-[0_40px_100px_-20px_rgba(0,0,0,0.4)] z-[100] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] rounded-[40px] border border-white flex flex-col overflow-hidden ${isNotesOpen ? "translate-y-0 scale-100 opacity-100" : "translate-y-20 scale-90 opacity-0 pointer-events-none"}`}>
           {currentTopic && activePage !== "agenda" && activePage !== "cover" && (
@@ -799,17 +762,15 @@ const App = () => {
             </div>
           )}
         </div>
-
-        <button onClick={() => setActivePage("summary")} className={`fixed left-0 bottom-0 z-[60] bg-slate-800 p-2 text-white print:hidden ${isSidebarOpen ? 'w-[320px]' : 'w-[88px]'} transition-all`}>📝 筆記總覽</button>
       </div>
 
       {/* ---------------------------------------------------- */}
-      {/* 區塊二：PDF 列印專用視圖 (列印時顯示，解決截斷問題) */}
+      {/* 區塊二：PDF 列印專用視圖 (100% 解除高度封印，強制分頁) */}
       {/* ---------------------------------------------------- */}
-      <div className="hidden print:block w-full bg-[#F8FAFC] text-slate-800" style={{ fontFamily: FONT_FAMILY }}>
+      <div className="hidden print:block w-full bg-[#0A0F1C]" style={{ fontFamily: FONT_FAMILY, minHeight: 'auto' }}>
         
         {/* PDF 第一頁：封面 */}
-        <div className="w-full min-h-screen flex flex-col justify-center px-16 py-16 text-white relative bg-[#0A0F1C] break-after-page box-border overflow-hidden">
+        <div className="print-page flex flex-col justify-center px-24 py-16 text-white relative bg-[#0A0F1C]">
           <div className="absolute top-[-10%] right-[-5%] w-[60%] h-[60%] bg-gradient-to-bl from-[#338F88]/20 via-[#B89F5D]/5 to-transparent rounded-full blur-[120px] opacity-40" />
           <div className="absolute bottom-[-10%] left-[-5%] w-[50%] h-[50%] bg-[#0F172A] rounded-full blur-[120px] opacity-80" />
           
@@ -817,16 +778,13 @@ const App = () => {
             <div className="w-[55%] relative z-10 flex flex-col justify-center">
               <div className="flex items-center gap-4 mb-8">
                 <div className="w-10 h-1 bg-[#B89F5D] rounded-full" />
-                <span className="text-[#B89F5D] font-black tracking-[0.3em] text-sm uppercase">Strategic Session</span>
+                <span className="text-[#B89F5D] font-black tracking-[0.3em] text-[18px] uppercase">Strategic Session</span>
               </div>
-              <h1 className="font-bold mb-8 tracking-tight leading-[1.2] drop-shadow-lg whitespace-pre-wrap" style={{ fontSize: `${config.cover?.titleFontSize || 72}px` }}>
-                {config.cover?.title || "未命名會議"}
-              </h1>
-              {config.cover?.desc && <p className="text-[18px] text-slate-300 mb-12 max-w-[600px] leading-[1.8] font-medium border-l-4 border-[#338F88] pl-6">{config.cover?.desc}</p>}
-              <div className="grid grid-cols-3 gap-6 py-8 border-y border-white/10 w-full max-w-[650px]">
-                <div className="flex flex-col"><span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-2">Meeting Date</span><span className="text-[15px] font-bold text-slate-200 flex items-center gap-2"><Calendar className="w-4 h-4 text-[#B89F5D]" /> {config.sessionDate || "TBD"}</span></div>
-                <div className="flex flex-col"><span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-2">Attendees</span><span className="text-[15px] font-bold text-slate-200 flex items-center gap-2 truncate"><Users className="w-4 h-4 text-[#B89F5D]" /> {getAttendeePreview(config.attendees)}</span></div>
-                <div className="flex flex-col"><span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-2">Agenda</span><span className="text-[15px] font-bold text-[#B89F5D] flex items-center gap-2"><ClipboardList className="w-4 h-4" /> {config.topics?.length || 0} ITEMS</span></div>
+              <h1 className="font-bold tracking-tight mb-8 leading-[1.2]" style={{ fontSize: `${config.cover?.titleFontSize || 72}px` }}>{config.cover?.title || "未命名會議"}</h1>
+              {config.cover?.desc && <p className="text-[24px] text-slate-300 max-w-[800px] leading-[1.8] font-medium border-l-4 border-[#338F88] pl-6 mb-16">{config.cover?.desc}</p>}
+              <div className="flex gap-16 text-[24px] text-slate-400 font-bold border-t border-white/20 pt-10 mt-12 w-full max-w-[800px]">
+                <div className="flex flex-col"><span className="text-[14px] text-slate-500 uppercase tracking-widest mb-2">Meeting Date</span><span className="text-[#B89F5D] flex items-center gap-2">{config.sessionDate || "TBD"}</span></div>
+                <div className="flex flex-col"><span className="text-[14px] text-slate-500 uppercase tracking-widest mb-2">Attendees</span><span className="text-[#B89F5D] flex items-center gap-2">{getAttendeePreview(config.attendees)}</span></div>
               </div>
             </div>
             
@@ -848,24 +806,24 @@ const App = () => {
 
         {/* PDF 第二頁：議程目錄 */}
         {config.topics?.length > 0 && (
-          <div className="w-full min-h-screen px-20 py-24 bg-slate-50 flex flex-col justify-start break-after-page box-border">
+          <div className="print-page px-24 py-20 flex flex-col bg-[#F8FAFC]">
             <div className="flex items-center gap-4 mb-8">
               <div className="w-10 h-1 bg-[#B89F5D] rounded-full" />
-              <span className="text-[#B89F5D] font-black tracking-[0.4em] text-sm uppercase">Meeting Agenda</span>
+              <span className="text-[#B89F5D] font-black tracking-[0.4em] text-[16px] uppercase">Meeting Agenda</span>
             </div>
             <h2 className="text-[48px] font-black text-slate-900 mb-12 tracking-tighter">議程目錄</h2>
-            <div className="space-y-6 w-full max-w-[1200px] mx-auto">
+            <div className="flex-1 grid grid-cols-2 gap-10 content-start">
               {config.topics.map((t, idx) => (
-                <div key={`print-agenda-${t.id}`} className="bg-white p-10 border border-slate-200 rounded-[32px] flex gap-8 items-start relative overflow-hidden shadow-sm">
-                  <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#338F88]" />
-                  <div className="text-[48px] leading-none font-black text-slate-200 w-20 shrink-0 font-mono tracking-tighter pt-1">{String(idx + 1).padStart(2, "0")}</div>
-                  <div className="flex-1">
+                <div key={`print-agenda-${t.id}`} className="bg-white p-10 rounded-[32px] border border-slate-200 shadow-sm flex gap-8 items-start relative overflow-hidden">
+                  <div className="absolute left-0 top-0 bottom-0 w-2 bg-[#338F88] opacity-20" />
+                  <div className="text-[48px] font-black text-slate-200 leading-none tracking-tighter pt-1">{String(idx + 1).padStart(2, "0")}</div>
+                  <div>
                     <div className="flex items-center gap-4 mb-3">
-                      <span className="text-[12px] font-bold text-[#B89F5D] tracking-widest uppercase">{t.id}</span>
-                      <span className={`px-3 py-1 rounded-md text-[11px] font-bold ${t.status === "resolved" ? "bg-[#338F88]/10 text-[#338F88]" : "bg-slate-100 text-slate-500"}`}>{t.status === "resolved" ? "已決議" : "討論中"}</span>
+                      <span className="text-[14px] font-bold text-[#B89F5D] tracking-widest uppercase">{t.id}</span>
+                      <span className={`px-3 py-1 rounded-md text-[12px] font-bold ${t.status === "resolved" ? "bg-[#338F88]/10 text-[#338F88]" : "bg-slate-100 text-slate-500"}`}>{t.status === "resolved" ? "已決議" : "討論中"}</span>
                     </div>
-                    <h3 className="text-[32px] font-bold text-slate-900 mb-3 leading-[1.3] tracking-tight">{t.title}</h3>
-                    <p className="text-[18px] text-slate-600 font-medium whitespace-pre-wrap leading-[1.8] max-w-4xl">{t.desc || "無議題描述"}</p>
+                    <h3 className="text-[32px] font-bold text-slate-900 leading-tight mb-4 tracking-tight">{t.title}</h3>
+                    <p className="text-[20px] text-slate-600 line-clamp-3 leading-[1.8]">{t.desc}</p>
                   </div>
                 </div>
               ))}
@@ -873,67 +831,43 @@ const App = () => {
           </div>
         )}
 
-        {/* PDF 後續頁面：所有議題 (自動一議題一頁) */}
+        {/* PDF 後續頁面：議題詳細分頁 */}
         {config.topics?.map((t) => {
           const images = t.images?.length > 0 ? t.images : t.previewContent ? [t.previewContent] : [];
           return (
-            <div key={`print-topic-${t.id}`} className="w-full min-h-screen px-20 py-24 bg-slate-50 flex flex-col justify-start break-after-page box-border">
-              <div className="flex items-center justify-between gap-4 mb-12">
-                <span className="px-5 py-2 rounded-full bg-white border border-slate-200 text-[12px] font-black text-slate-400 tracking-widest uppercase shadow-sm">{t.id}</span>
-                <div className="flex gap-1.5 bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
-                  <div className={`px-5 py-2 rounded-lg text-sm font-bold ${t.status === "resolved" ? "bg-[#338F88] text-white shadow-sm" : "bg-slate-100 text-slate-500"}`}>{t.status === "resolved" ? "已決議" : "討論中"}</div>
-                </div>
+            <div key={`print-topic-${t.id}`} className="print-page flex flex-col px-24 py-20 bg-[#F8FAFC]">
+              <div className="flex items-center justify-between mb-12">
+                <span className="px-6 py-2 rounded-full bg-white border border-slate-200 text-[16px] font-black text-slate-400 tracking-widest uppercase shadow-sm">{t.id}</span>
+                <span className={`px-6 py-2 rounded-lg text-[16px] font-bold border ${t.status === "resolved" ? "bg-[#338F88] text-white shadow-sm" : "bg-white text-slate-500 border-slate-200"}`}>{t.status === "resolved" ? "已決議" : "討論中"}</span>
               </div>
-
-              <h2 className="text-[56px] font-black text-slate-900 mb-12 leading-[1.3] tracking-tight">
-                <span className="relative inline-block px-2">
-                  <span className="absolute bottom-[10%] left-[-2%] w-[104%] h-[40%] bg-[#FCEBAF] rounded-sm transform -rotate-1 z-0 shadow-sm" />
-                  <span className="relative z-10">{t.title}</span>
-                </span>
+              <h2 className="text-[56px] font-black text-slate-900 mb-12 leading-[1.3] tracking-tight border-b-4 border-[#B89F5D] inline-block pb-4">
+                {t.title}
               </h2>
-
               {t.desc && (
-                <div className="mb-16">
-                  <div className="border-l-4 border-[#B89F5D] bg-white rounded-r-2xl p-8 shadow-sm">
-                    <div className="text-[24px] text-slate-700 leading-[2] whitespace-pre-wrap font-medium">{t.desc}</div>
-                  </div>
+                <div className="mb-12 border-l-4 border-[#B89F5D] bg-white rounded-r-2xl p-8 shadow-sm">
+                  <div className="text-[24px] text-slate-700 leading-[2] whitespace-pre-wrap font-medium">{t.desc}</div>
                 </div>
               )}
-
-              <div className="flex-1 flex flex-col gap-12 mt-4 max-w-[1200px] mx-auto w-full">
+              <div className="flex-1 grid grid-cols-2 gap-16 overflow-hidden">
                 <div className="flex flex-col">
-                  <div className="flex items-center gap-3 mb-6">
-                    <Edit3 className="w-6 h-6 text-[#B89F5D]" />
-                    <span className="text-[16px] font-black text-[#B89F5D] tracking-widest uppercase">Live Resolution Note</span>
-                  </div>
-                  <div className="w-full bg-white rounded-[32px] shadow-sm border border-slate-200/50 p-10">
-                    <div className="text-[20px] leading-[2] text-slate-800 font-medium whitespace-pre-wrap">
-                      {t.notes || "此議題尚無筆記。"}
-                    </div>
+                  <h3 className="text-[28px] font-bold text-[#B89F5D] mb-6 flex items-center gap-3"><Edit3 className="w-6 h-6 text-[#B89F5D]" /> 決議與筆記</h3>
+                  <div className="text-[24px] leading-[2] text-slate-800 font-medium bg-white p-8 rounded-3xl border border-slate-200 shadow-sm h-full">
+                    {t.notes || "此議題尚無筆記。"}
                   </div>
                 </div>
-
-                {images.length > 0 && (
-                  <div className="flex flex-col">
-                    <div className="flex items-center gap-3 mb-6">
-                      <ImageIcon className="w-6 h-6 text-slate-400" />
-                      <span className="text-[16px] font-black text-slate-400 tracking-widest uppercase">Visual Assets</span>
-                    </div>
-                    <div className="w-full bg-white rounded-[32px] p-8 flex flex-col items-center justify-center border border-slate-100 shadow-sm gap-8">
-                      {images.map((img, i) => (
-                        <img key={i} src={img} className="max-w-full max-h-[600px] object-contain rounded-2xl shadow-sm" alt="視覺資產" />
-                      ))}
-                    </div>
+                <div className="flex flex-col">
+                  <h3 className="text-[28px] font-bold text-slate-400 mb-6 flex items-center gap-3"><ImageIcon className="w-6 h-6 text-slate-400" /> 視覺參考圖檔</h3>
+                  <div className="flex flex-col items-center justify-center bg-white border border-slate-200 p-8 rounded-3xl shadow-sm h-full">
+                    {images.length > 0 ? (<img src={images[0]} className="max-w-full max-h-[500px] object-contain rounded-xl" alt="視覺參考" />) : (<p className="text-slate-400 text-[24px] font-medium tracking-widest">無視覺圖檔</p>)}
                   </div>
-                )}
+                </div>
               </div>
             </div>
           );
         })}
       </div>
 
-      {/* 遮罩、筆記面板與控制台 */}
-      <div className={`fixed inset-0 bg-slate-900/20 backdrop-blur-[4px] z-[90] transition-all duration-500 ${isNotesOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`} onClick={() => setIsNotesOpen(false)} />
+      {/* 遮罩、圖片放大 */}
       {fullscreenImg && (
         <div onClick={() => setFullscreenImg(null)} className="fixed inset-0 bg-[#0A0F1C]/98 backdrop-blur-xl z-[1000] flex items-center justify-center p-12 cursor-zoom-out animate-in fade-in duration-300">
           <img src={fullscreenImg} className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl" alt="Full" />
