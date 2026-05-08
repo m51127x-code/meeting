@@ -383,7 +383,6 @@ const App = () => {
     const exportImgs = t.images?.length > 0 ? t.images : t.previewContent ? [t.previewContent] : [];
     return (
       <div id="export-container-target" className="bg-white overflow-hidden text-slate-800 pb-32" style={{ width: "1440px", fontFamily: FONT_FAMILY, position: "absolute", left: "-9999px", top: "-9999px", display: "none" }}>
-        {/* ... (為了程式碼簡潔，保留原本長圖匯出邏輯不變) ... */}
         <div className="bg-[#0A0F1C] px-24 py-16 text-white flex justify-between items-end border-b-[16px] border-[#B89F5D]">
           <div>
             <div className="text-sm font-black text-[#B89F5D] tracking-[0.4em] uppercase mb-4">Strategic Topic Record</div>
@@ -416,7 +415,7 @@ const App = () => {
           <div><h1 className="font-bold max-w-3xl leading-tight">{config.cover?.title || "未命名戰略會議"} - 筆記總覽</h1></div>
         </div>
         <div className="px-24 py-20">
-          <div className="space-y-10">{config.topics?.map((t, idx) => (<div key={t.id} className="relative bg-white rounded-[40px] p-10 border shadow-sm flex gap-8 items-start"><div className="flex-1"><h3 className="text-[32px] font-black text-slate-800 mb-6">{t.title}</h3><div className="bg-slate-50 rounded-[24px] p-8 border"><div className="text-[18px] text-slate-700 leading-[1.9] whitespace-pre-wrap">{t.notes || "無筆記"}</div></div></div></div>))}</div>
+          <div className="space-y-10">{config.topics?.map((t, idx) => (<div key={t.id} className="relative bg-white rounded-[40px] p-10 border shadow-sm flex gap-8 items-start"><div className="text-[48px] leading-none font-black text-slate-100 w-20 shrink-0 font-mono tracking-tighter pt-1">{String(idx + 1).padStart(2, "0")}</div><div className="flex-1"><h3 className="text-[32px] font-black text-slate-800 mb-6">{t.title}</h3><div className="bg-slate-50 rounded-[24px] p-8 border"><div className="text-[18px] text-slate-700 leading-[1.9] whitespace-pre-wrap">{t.notes || "無筆記"}</div></div></div></div>))}</div>
         </div>
       </div>
     );
@@ -454,7 +453,7 @@ const App = () => {
       `}</style>
 
       {/* Sidebar */}
-      <aside className={`bg-[#0A0F1C] border-r border-slate-800 flex flex-col z-40 relative transition-all duration-500 ease-in-out overflow-hidden shrink-0 ${isSidebarOpen ? "w-[320px]" : "w-[88px]"}`}>
+      <aside className={`bg-[#0A0F1C] border-r border-slate-800 flex flex-col z-40 relative transition-all duration-500 ease-in-out overflow-hidden shrink-0 no-print ${isSidebarOpen ? "w-[320px]" : "w-[88px]"}`}>
         <div className="pt-10 pb-6 flex-1 overflow-y-auto custom-scrollbar-dark flex flex-col items-center">
           <div className={`flex items-center mb-10 text-[#B89F5D] transition-all duration-300 ${isSidebarOpen ? 'w-full px-8 justify-start' : 'w-full justify-center'}`}>
             <div className="w-5 h-5 bg-[#B89F5D] rounded-sm rotate-45 shrink-0" />
@@ -511,7 +510,7 @@ const App = () => {
       </aside>
 
       {/* Main Content */}
-      <main ref={scrollContainerRef} className={`flex-1 relative overflow-y-auto custom-scrollbar-light transition-all duration-500 ${activePage === "cover" ? "bg-[#0A0F1C]" : "bg-slate-50"} ${isNotesOpen ? "rounded-l-[48px] shadow-2xl" : ""}`}>
+      <main ref={scrollContainerRef} className={`flex-1 relative overflow-y-auto custom-scrollbar-light transition-all duration-500 no-print ${activePage === "cover" ? "bg-[#0A0F1C]" : "bg-slate-50"} ${isNotesOpen ? "rounded-l-[48px] shadow-2xl" : ""}`}>
         <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className={`fixed top-8 z-50 w-11 h-11 backdrop-blur-md shadow-sm rounded-xl flex items-center justify-center transition-all duration-500 ease-in-out group no-print ${isSidebarOpen ? "left-[344px]" : "left-[112px]"} ${activePage === "cover" ? "bg-white/10 border border-white/20 text-white/50 hover:bg-white/20 hover:text-white" : "bg-white/90 border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800"}`}>
           <Menu className="w-5 h-5" />
         </button>
