@@ -24,7 +24,9 @@ import {
   Check,
   Home,
   List,
-  FileText
+  FileText,
+  Share2,
+  Printer
 } from "lucide-react";
 
 const THEME = {
@@ -74,6 +76,17 @@ const QUICK_TAGS = [
 ];
 
 const App = () => {
+  // ==========================================
+  // [新增區塊 A]：狀態與模式判斷
+  // ==========================================
+  // 1. 抓取目前網址的參數，判斷是否為「與會者唯讀模式」
+  const urlParams = new URLSearchParams(window.location.search);
+  const isViewer = urlParams.get("mode") === "viewer";
+  const meetingId = urlParams.get("id");
+
+  // 2. 記錄「產生連結」按鈕是否正在處理中的狀態 (防止重複點擊)
+  const [isGeneratingLink, setIsGeneratingLink] = useState(false);
+  // ==========================================
   const [config, setConfig] = useState(() => {
     try {
       const savedData = sessionStorage.getItem("strategyMeetingData");
@@ -87,7 +100,31 @@ const App = () => {
   useEffect(() => {
     sessionStorage.setItem("strategyMeetingData", JSON.stringify(config));
   }, [config]);
+useEffect(() => {
+    sessionStorage.setItem("strategyMeetingData", JSON.stringify(config));
+  }, [config]);
 
+  // ==========================================
+  // [新增區塊 B]：與會者專用 - 載入雲端資料
+  // ==========================================
+  useEffect(() => {
+    // 如果網址有 ?mode=viewer 且帶有 id，就去抓取雲端資料
+    if (isViewer && meetingId) {
+      fetch(`/api/get?id=${meetingId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && !data.error) {
+            setConfig(data); // 抓到資料後，直接覆蓋掉本地的 config
+          } else {
+            alert("此會議紀錄不存在或已失效。");
+          }
+        })
+        .catch(err => {
+          console.error("讀取資料失敗", err);
+        });
+    }
+  }, [isViewer, meetingId]);
+  // ==========================================
   const [activePage, setActivePage] = useState("cover");
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [isNotesOpen, setIsNotesOpen] = useState(false);
@@ -183,7 +220,38 @@ const App = () => {
     setConfig(tempConfig);
     setIsConfigOpen(false);
   };
-
+// ==========================================
+  // [新增區塊 C]：主講者專用 - 產生專屬網址
+  // ==========================================
+  const generateShareLink = async () => {
+    setIsGeneratingLink(true); // 按鈕變成「產生中...」
+    try {
+      // 呼叫我們先前建立的 API，把當下的 config 傳到 Vercel KV
+      const response = await fetch('/api/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ configData: config })
+      });
+      const result = await response.json();
+      
+      if (result.id) {
+        // 組合出帶有 ID 的專屬網址
+        const link = `${window.location.origin}/?mode=viewer&id=${result.id}`;
+        
+        // 自動把網址複製到使用者的剪貼簿
+        navigator.clipboard.writeText(link);
+        alert("✅ 已產生唯讀分享連結，並自動複製到剪貼簿！\n您可以直接貼上分享給與會者。");
+      } else {
+        alert("產生失敗，無法獲取會議 ID。");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("發生錯誤，產生連結失敗。請確認 API 是否設定正確。");
+    } finally {
+      setIsGeneratingLink(false); // 恢復按鈕狀態
+    }
+  };
+  // ==========================================
   const exportConfigJSON = () => {
     const dataStr = JSON.stringify(config, null, 2);
     const dataUri =
