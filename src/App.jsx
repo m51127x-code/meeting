@@ -18,7 +18,6 @@ import {
   Save,
   ChevronUp,
   ChevronDown,
-  Menu,
   Check,
   Home,
   List,
@@ -455,12 +454,18 @@ const App = () => {
       {/* Sidebar */}
       <aside className={`bg-[#0A0F1C] border-r border-slate-800 flex flex-col z-40 relative transition-all duration-500 ease-in-out overflow-hidden shrink-0 no-print ${isSidebarOpen ? "w-[320px]" : "w-[88px]"}`}>
         <div className="pt-10 pb-6 flex-1 overflow-y-auto custom-scrollbar-dark flex flex-col items-center">
-          <div className={`flex items-center mb-10 text-[#B89F5D] transition-all duration-300 ${isSidebarOpen ? 'w-full px-8 justify-start' : 'w-full justify-center'}`}>
-            <div className="w-5 h-5 bg-[#B89F5D] rounded-sm rotate-45 shrink-0" />
+          
+          {/* Logo Area (現在兼具側欄收合開關功能) */}
+          <button 
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className={`flex items-center mb-10 text-[#B89F5D] hover:text-[#FCEBAF] transition-all duration-300 cursor-pointer group outline-none ${isSidebarOpen ? 'w-full px-8 justify-start' : 'w-full justify-center'}`}
+            title={isSidebarOpen ? "收起側欄" : "展開側欄"}
+          >
+            <div className="w-5 h-5 bg-[#B89F5D] group-hover:bg-[#FCEBAF] group-hover:scale-110 rounded-sm rotate-45 shrink-0 transition-all duration-300 shadow-sm" />
             <h1 className={`font-bold tracking-[0.2em] text-[10px] uppercase whitespace-nowrap overflow-hidden transition-all duration-300 ${isSidebarOpen ? 'opacity-100 max-w-[200px] ml-3' : 'opacity-0 max-w-0 ml-0'}`}>
               Strategic Navigator
             </h1>
-          </div>
+          </button>
 
           <nav className="w-full flex flex-col min-h-[calc(100vh-250px)]">
             <div className="px-3 space-y-2">
@@ -511,10 +516,7 @@ const App = () => {
 
       {/* Main Content */}
       <main ref={scrollContainerRef} className={`flex-1 relative overflow-y-auto custom-scrollbar-light transition-all duration-500 no-print ${activePage === "cover" ? "bg-[#0A0F1C]" : "bg-slate-50"} ${isNotesOpen ? "rounded-l-[48px] shadow-2xl" : ""}`}>
-        <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className={`fixed top-8 z-50 w-11 h-11 backdrop-blur-md shadow-sm rounded-xl flex items-center justify-center transition-all duration-500 ease-in-out group no-print ${isSidebarOpen ? "left-[344px]" : "left-[112px]"} ${activePage === "cover" ? "bg-white/10 border border-white/20 text-white/50 hover:bg-white/20 hover:text-white" : "bg-white/90 border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800"}`}>
-          <Menu className="w-5 h-5" />
-        </button>
-
+        
         {/* Right Toolbar Actions */}
         <div className="fixed top-8 right-8 z-50 flex items-center gap-3 no-print">
           {!isViewer && (
@@ -536,16 +538,37 @@ const App = () => {
           {activePage === "cover" && (
             <div className="min-h-screen flex flex-col justify-center px-8 md:px-16 pt-32 pb-16 text-white relative overflow-hidden">
               <div className="absolute top-[-10%] right-[-5%] w-[60%] h-[60%] bg-gradient-to-bl from-[#338F88]/20 via-[#B89F5D]/5 to-transparent rounded-full blur-[120px] opacity-40 pointer-events-none" />
+              <div className="absolute bottom-[-10%] left-[-5%] w-[50%] h-[50%] bg-[#0F172A] rounded-full blur-[120px] opacity-80 pointer-events-none" />
               <div className="z-10 w-full max-w-[1200px] mx-auto relative flex flex-col lg:flex-row items-center justify-between gap-12">
                 <div className="w-full lg:w-[55%] relative z-10 flex flex-col justify-center">
+                  <div className="flex items-center gap-4 mb-8">
+                    <div className="w-10 h-1 bg-[#B89F5D] rounded-full" />
+                    <span className="text-[#B89F5D] font-black tracking-[0.3em] text-xs md:text-sm uppercase">Strategic Session</span>
+                  </div>
                   <h1 className="font-bold mb-8 tracking-tight leading-[1.2] drop-shadow-lg break-words whitespace-pre-wrap transition-all duration-300" style={{ fontSize: `clamp(36px, ${displayConfig.cover?.titleFontSize || 72}px, 88px)` }}>
                     {displayConfig.cover?.title || "未命名會議"}
                   </h1>
-                  {displayConfig.cover?.desc && <p className="text-[18px] text-slate-300 mb-12 max-w-[600px] leading-[1.8] font-medium border-l-4 border-[#338F88] pl-6">{displayConfig.cover?.desc}</p>}
+                  {displayConfig.cover?.desc && <p className="text-[16px] md:text-[18px] text-slate-300 mb-12 max-w-[600px] leading-[1.8] font-medium border-l-4 border-[#338F88] pl-6">{displayConfig.cover?.desc}</p>}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-12 py-8 border-y border-white/10 w-full max-w-[650px]">
                     <div className="flex flex-col"><span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-2">Meeting Date</span><span className="text-sm md:text-[15px] font-bold text-slate-200 flex items-center gap-2"><Calendar className="w-4 h-4 text-[#B89F5D]" /> {displayConfig.sessionDate || "TBD"}</span></div>
                     <div className="flex flex-col"><span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-2">Attendees</span><span className="text-sm md:text-[15px] font-bold text-slate-200 flex items-center gap-2 truncate" title={displayConfig.attendees}><Users className="w-4 h-4 text-[#B89F5D]" /> {getAttendeePreview(displayConfig.attendees)}</span></div>
                     <div className="flex flex-col"><span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-2">Agenda</span><span className="text-sm md:text-[15px] font-bold text-[#B89F5D] flex items-center gap-2"><ClipboardList className="w-4 h-4" /> {displayConfig.topics?.length || 0} ITEMS</span></div>
+                  </div>
+                  <button onClick={() => { if (displayConfig.topics?.length > 0) setActivePage("agenda"); else openConfig(); }} className="px-6 py-3.5 bg-white text-[#0A0F1C] rounded-2xl font-bold text-[15px] flex items-center gap-3 transition-all hover:bg-slate-200 shadow-xl group w-fit">
+                    {displayConfig.topics?.length > 0 ? "開始進行會議" : "設定會議內容"} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </button>
+                </div>
+                <div className="hidden lg:flex w-[45%] justify-center items-center pointer-events-none z-0">
+                  <div className="relative w-[360px] h-[360px] xl:w-[460px] xl:h-[460px] flex justify-center items-center">
+                    <div className="absolute inset-0 border border-white/5 rounded-full animate-[spin_60s_linear_infinite]" />
+                    <div className="absolute inset-10 xl:inset-12 border border-[#B89F5D]/20 rounded-full animate-[spin_40s_linear_infinite_reverse]" />
+                    <div className="absolute inset-20 xl:inset-24 border border-dashed border-[#338F88]/30 rounded-full animate-[spin_80s_linear_infinite]" />
+                    <div className="w-48 h-48 xl:w-64 xl:h-64 bg-gradient-to-br from-[#B89F5D]/80 to-[#338F88]/80 rounded-[32px] rotate-45 shadow-[0_0_80px_rgba(184,159,93,0.15)] backdrop-blur-3xl flex items-center justify-center relative overflow-hidden group">
+                      <div className="absolute inset-0 bg-white/5 group-hover:bg-white/10 transition-colors" />
+                      <div className="w-40 h-40 xl:w-52 xl:h-52 bg-[#0A0F1C] rounded-[24px] flex items-center justify-center border border-white/10 shadow-inner relative overflow-hidden">
+                        <div className="w-16 h-16 xl:w-20 xl:h-20 bg-gradient-to-tr from-[#B89F5D] to-[#FCEBAF] rounded-xl shadow-[0_0_40px_rgba(252,235,175,0.3)] animate-pulse" />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -554,10 +577,15 @@ const App = () => {
 
           {activePage === "agenda" && (
             <div className="min-h-screen px-8 md:px-16 pt-32 pb-24 mx-auto w-full max-w-[1000px] xl:max-w-[1200px] transition-all flex flex-col justify-start">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-10 h-1 bg-[#B89F5D] rounded-full" />
+                <span className="text-[#B89F5D] font-black tracking-[0.4em] text-[11px] md:text-xs uppercase">Meeting Agenda</span>
+              </div>
               <h2 className="text-[36px] md:text-[48px] font-black text-slate-900 mb-10 leading-tight tracking-tighter">議程目錄</h2>
               <div className="space-y-6 w-full">
                 {config.topics?.length > 0 ? config.topics.map((t, idx) => (
                   <div key={t.id} onClick={() => setActivePage(t.id)} className="group p-8 md:p-10 bg-white border border-slate-200 rounded-[32px] hover:border-[#338F88] hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col md:flex-row gap-6 md:gap-8 md:items-start relative overflow-hidden">
+                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-transparent group-hover:bg-[#338F88] transition-colors" />
                     <div className="text-[40px] md:text-[48px] leading-none font-black text-slate-100 group-hover:text-[#338F88]/10 transition-colors w-16 md:w-20 shrink-0 font-mono tracking-tighter pt-1">{String(idx + 1).padStart(2, "0")}</div>
                     <div className="flex-1">
                       <div className="flex items-center gap-4 mb-3">
@@ -575,10 +603,15 @@ const App = () => {
 
           {activePage === "summary" && (
             <div className="min-h-screen px-8 md:px-16 pt-32 pb-24 mx-auto w-full max-w-[1000px] xl:max-w-[1200px] transition-all flex flex-col justify-start">
+              <div className="flex items-center gap-4 mb-10">
+                <div className="w-10 h-1 bg-[#B89F5D] rounded-full" />
+                <span className="text-[#B89F5D] font-black tracking-[0.4em] text-[11px] md:text-xs uppercase">Executive Summary</span>
+              </div>
               <h2 className="text-[36px] md:text-[48px] font-black text-slate-900 mb-10 leading-tight tracking-tighter">會議決議與筆記總覽</h2>
               <div className="space-y-6 w-full">
                 {config.topics?.length > 0 ? config.topics.map((t, idx) => (
                   <div key={t.id} onClick={() => setActivePage(t.id)} className="group p-8 md:p-10 bg-white border border-slate-200 rounded-[32px] hover:border-[#338F88] hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col md:flex-row gap-6 md:gap-8 md:items-start relative overflow-hidden">
+                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-transparent group-hover:bg-[#338F88] transition-colors" />
                     <div className="text-[40px] md:text-[48px] leading-none font-black text-slate-100 group-hover:text-[#338F88]/10 transition-colors w-16 md:w-20 shrink-0 font-mono tracking-tighter pt-1">{String(idx + 1).padStart(2, "0")}</div>
                     <div className="flex-1">
                       <h3 className="text-[22px] md:text-[28px] lg:text-[32px] font-bold text-slate-900 mb-4 group-hover:text-[#338F88] transition-colors leading-[1.3] tracking-tight">{t.title}</h3>
