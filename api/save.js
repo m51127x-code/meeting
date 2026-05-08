@@ -1,16 +1,30 @@
-import { kv } from '@vercel/kv';
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
-  
   try {
     const { configData } = req.body;
-    // 產生一個 6 碼隨機 ID
+    // 產生 6 碼隨機會議 ID
     const meetingId = Math.random().toString(36).substring(2, 8);
     
-    // 存入 Vercel KV (拿掉 ex 設定，資料即為永久保存)
-    await kv.set(`meeting_${meetingId}`, configData);
+    // 讀取 Vercel 自動綁定的環境變數
+    const kvUrl = process.env.KV_REST_API_URL;
+    const kvToken = process.env.KV_REST_API_TOKEN;
     
+    if (!kvUrl || !kvToken) {
+      return res.status(500).json({ error: '未偵測到 KV 資料庫綁定' });
+    }
+
+    // 使用原生 fetch 寫入資料庫，完美避開套件缺失問題
+    const response = await fetch(`${kvUrl}/set/meeting_${meetingId}`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${kvToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(configData),
+    });
+
+    if (!response.ok) throw new Error('寫入資料庫失敗');
+
     res.status(200).json({ id: meetingId });
   } catch (error) {
     console.error(error);
