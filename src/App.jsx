@@ -200,11 +200,11 @@ const App = () => {
         navigator.clipboard.writeText(link);
         alert("✅ 已產生唯讀分享連結，並自動複製到剪貼簿！\n您可以直接貼上分享給與會者。");
       } else {
-        alert("產生失敗，無法獲取會議 ID。請確認 Vercel 的 KV 資料庫是否設定完成。");
+        alert("產生失敗，無法獲取會議 ID。\n\n(提示：如果您在本地開發環境測試，API 可能不會生效，請推送至 Vercel 後測試)");
       }
     } catch (err) {
       console.error(err);
-      alert("發生錯誤，產生連結失敗。這是因為您尚未在 Vercel 中加入 API 程式碼。");
+      alert("發生錯誤，產生連結失敗。\n\n(提示：Vite 本地開發伺服器無法直接存取 Vercel API，請將專案部署至 Vercel 後即可正常使用！)");
     } finally {
       setIsGeneratingLink(false);
     }
@@ -345,23 +345,6 @@ const App = () => {
     }
   };
 
-  const handleExportSummary = async () => {
-    if (!window.html2canvas) return;
-    setExportingTopicId("summary"); setIsExporting(true);
-    await new Promise((r) => setTimeout(r, 800));
-    const target = document.getElementById("export-summary-target");
-    if (target) target.style.display = "block";
-
-    try {
-      const canvas = await window.html2canvas(target, { scale: 2, useCORS: true, backgroundColor: "#F8FAFC", windowWidth: 1440 });
-      const link = document.createElement("a");
-      link.download = `會議筆記總覽_${config.cover?.title || "未命名"}.png`;
-      link.href = canvas.toDataURL("image/png", 1.0); link.click();
-    } catch (err) { console.error(err); } finally {
-      setIsExporting(false); setExportingTopicId(null); if (target) target.style.display = "none";
-    }
-  };
-
   const compressImage = (file) => {
     return new Promise((resolve) => {
       const reader = new FileReader(); reader.readAsDataURL(file);
@@ -440,31 +423,6 @@ const App = () => {
     );
   };
 
-  const renderSummaryExport = () => {
-    return (
-      <div id="export-summary-target" className="bg-[#F8FAFC] overflow-hidden text-slate-800 pb-32" style={{ width: "1440px", fontFamily: FONT_FAMILY, position: "absolute", left: "-9999px", top: "-9999px", display: "none" }}>
-        <div className="bg-[#0A0F1C] px-24 py-16 text-white flex justify-between items-end border-b-[16px] border-[#338F88]">
-          <div><h1 className="font-bold max-w-3xl leading-tight">{config.cover?.title || "未命名戰略會議"} - 筆記總覽</h1></div>
-        </div>
-        <div className="px-24 py-20">
-          <div className="space-y-10">
-            {config.topics?.map((t, idx) => (
-              <div key={t.id} className="relative bg-white rounded-[40px] p-10 border shadow-sm flex gap-8 items-start">
-                <div className="text-[48px] leading-none font-black text-slate-100 w-20 shrink-0 font-mono tracking-tighter pt-1">{String(idx + 1).padStart(2, "0")}</div>
-                <div className="flex-1">
-                  <h3 className="text-[32px] font-black text-slate-800 mb-6">{t.title}</h3>
-                  <div className="bg-slate-50 rounded-[24px] p-8 border">
-                    <div className="text-[18px] text-slate-700 leading-[1.9] whitespace-pre-wrap">{t.notes || "無筆記"}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div className="h-screen flex overflow-hidden bg-[#0A0F1C] text-slate-800" style={{ fontFamily: FONT_FAMILY }}>
       <style>{`
@@ -479,7 +437,7 @@ const App = () => {
         .custom-scrollbar-light::-webkit-scrollbar-thumb:hover { background: rgba(51, 143, 136, 0.6); }
 
         /* ===================================== */
-        /* PDF 列印專用樣式 (強制 A4 橫式) */
+        /* PDF 列印專用樣式 (強制白底亮色風格，解決吃背景問題) */
         /* ===================================== */
         @media print {
           @page { size: A4 landscape; margin: 0; }
@@ -518,7 +476,7 @@ const App = () => {
       <aside className={`bg-[#0A0F1C] border-r border-slate-800 flex flex-col z-40 relative transition-all duration-500 ease-in-out overflow-hidden shrink-0 no-print ${isSidebarOpen ? "w-[320px]" : "w-[88px]"}`}>
         <div className="pt-10 pb-6 flex-1 overflow-y-auto custom-scrollbar-dark flex flex-col items-center">
           
-          {/* Logo Area (側欄收合開關) - 依需求整合三條線功能 */}
+          {/* Logo Area (側欄收合開關) */}
           <button 
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             className={`flex items-center mb-10 text-[#B89F5D] hover:text-[#FCEBAF] transition-all duration-300 cursor-pointer group outline-none ${isSidebarOpen ? 'w-full px-8 justify-start' : 'w-full justify-center'}`}
@@ -568,9 +526,27 @@ const App = () => {
               </div>
             </div>
 
-            <div className={`pt-4 mt-2 border-t border-slate-800/50 ${isSidebarOpen ? "px-3" : "px-3"}`}>
-              <button onClick={() => setActivePage("summary")} className={`w-full rounded-2xl font-bold flex items-center transition-all ${isSidebarOpen ? "px-4 py-3.5 text-[15px] justify-start" : "p-3.5 justify-center"} ${activePage === "summary" ? "bg-white/10 text-[#B89F5D]" : "text-slate-400 hover:text-white hover:bg-white/5"}`}>
-                {!isSidebarOpen ? <FileText className="w-5 h-5 text-[#B89F5D] opacity-80" /> : "📝 筆記總覽"}
+            {/* 新的側欄底部：匯出與分享小按鈕區 (左右並排方塊設計) */}
+            <div className={`mt-auto pt-4 pb-6 border-t border-slate-800/50 flex ${isSidebarOpen ? 'flex-row' : 'flex-col'} gap-3 px-4 w-full`}>
+              {!isViewer && (
+                <button 
+                  onClick={generateShareLink} 
+                  disabled={isGeneratingLink} 
+                  className={`flex-1 py-3 rounded-xl border border-slate-700/50 bg-[#0F172A] text-slate-400 hover:bg-[#338F88]/10 hover:border-[#338F88]/40 hover:text-[#338F88] transition-all flex flex-col items-center justify-center gap-1.5 shadow-sm disabled:opacity-50`} 
+                  title="產生唯讀分享連結"
+                >
+                  <Share2 className="w-4 h-4" />
+                  {isSidebarOpen && <span className="text-[11px] font-bold tracking-wider">{isGeneratingLink ? "處理中..." : "分享連結"}</span>}
+                </button>
+              )}
+              
+              <button 
+                onClick={handlePrintPDF} 
+                className={`flex-1 py-3 rounded-xl border border-slate-700/50 bg-[#0F172A] text-slate-400 hover:bg-[#B89F5D]/10 hover:border-[#B89F5D]/40 hover:text-[#B89F5D] transition-all flex flex-col items-center justify-center gap-1.5 shadow-sm`} 
+                title="匯出 PDF 簡報"
+              >
+                <Printer className="w-4 h-4" />
+                {isSidebarOpen && <span className="text-[11px] font-bold tracking-wider">匯出 PDF</span>}
               </button>
             </div>
           </nav>
@@ -581,46 +557,25 @@ const App = () => {
       <main ref={scrollContainerRef} className={`flex-1 relative overflow-y-auto custom-scrollbar-light transition-all duration-500 no-print ${activePage === "cover" ? "bg-[#0A0F1C]" : "bg-slate-50"} ${isNotesOpen ? "rounded-l-[48px] shadow-2xl" : ""}`}>
         
         {/* ========================================== */}
-        {/* 全域右上方操作區 (還原原始高質感設計) */}
+        {/* 全域右上方操作區 (僅保留極簡設定按鈕) */}
         {/* ========================================== */}
-        <div className="fixed top-8 right-8 z-50 flex items-center gap-3 no-print">
-          
-          {/* 分享與設定 (僅限主講者) */}
-          {!isViewer && (
-            <>
-              <button 
-                onClick={generateShareLink} 
-                disabled={isGeneratingLink} 
-                className="px-5 py-2.5 bg-[#0F172A]/80 border border-white/10 text-white rounded-xl text-[13px] font-bold flex items-center gap-2 hover:bg-slate-800 transition-all shadow-md backdrop-blur-sm disabled:opacity-50"
-                title="產生永久網頁連結"
-              >
-                <Share2 className="w-4 h-4" /> 
-                {isGeneratingLink ? "產生中..." : "分享連結"}
-              </button>
-
-              <button 
-                onClick={openConfig} 
-                className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 border border-transparent hover:bg-white/20 text-slate-300 hover:text-white transition-all backdrop-blur-sm"
-                title="打開控制中心"
-              >
-                <Settings className="w-4 h-4" />
-              </button>
-            </>
-          )}
-
-          {/* 全域匯出 PDF (所有人可見) */}
-          <button 
-            onClick={handlePrintPDF} 
-            className="px-5 py-2.5 bg-[#B89F5D] text-[#0A0F1C] rounded-xl text-[13px] font-bold flex items-center gap-2 hover:bg-[#FCEBAF] transition-all shadow-lg" 
-            title="匯出成 PPT 格式的 PDF"
-          >
-            <Printer className="w-4 h-4" /> 匯出 PDF
-          </button>
-        </div>
+        {!isViewer && (
+          <div className="fixed top-8 right-8 z-50 flex items-center gap-3 no-print">
+            <button 
+              onClick={openConfig} 
+              className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all shadow-sm opacity-50 hover:opacity-100 backdrop-blur-sm ${
+                activePage === "cover" ? "bg-white/10 text-slate-300 hover:bg-white/20 hover:text-white" : "bg-white text-slate-400 border border-slate-200 hover:text-slate-800 hover:border-slate-300"
+              }`}
+              title="打開控制中心"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
         {/* 批量匯出 ZIP 浮動面板 (只在目錄頁且有選取時出現) */}
         {selectedTopics.length > 0 && activePage === "agenda" && (
-          <div className="fixed top-8 right-52 z-50 flex items-center gap-4 bg-[#0F172A] text-white px-5 h-11 rounded-xl shadow-xl border border-slate-800 animate-in slide-in-from-right-8 fade-in duration-300 no-print">
+          <div className="fixed top-8 right-24 z-50 flex items-center gap-4 bg-[#0F172A] text-white px-5 h-11 rounded-xl shadow-xl border border-slate-800 animate-in slide-in-from-right-8 fade-in duration-300 no-print">
             <span className="text-[13px] font-bold flex items-center">已選取 <span className="text-[#B89F5D] mx-1.5 text-[15px]">{selectedTopics.length}</span> 項</span>
             <div className="w-px h-4 bg-white/20" />
             <button onClick={handleBatchExportZIP} disabled={isExporting} className="text-[13px] font-bold hover:text-[#B89F5D] flex items-center gap-1.5 transition-colors disabled:opacity-50">
@@ -771,36 +726,9 @@ const App = () => {
           )}
 
           {/* ======================= */}
-          {/* 視圖三：Summary 總覽頁 */}
+          {/* 視圖三：各議題獨立視圖 */}
           {/* ======================= */}
-          {activePage === "summary" && (
-            <div className="min-h-screen px-8 md:px-16 pt-32 pb-24 mx-auto w-full max-w-[1000px] xl:max-w-[1200px] transition-all flex flex-col justify-start">
-              <div className="flex items-center gap-4 mb-10">
-                <div className="w-10 h-1 bg-[#B89F5D] rounded-full" />
-                <span className="text-[#B89F5D] font-black tracking-[0.4em] text-[11px] md:text-xs uppercase">Executive Summary</span>
-              </div>
-              <h2 className="text-[36px] md:text-[48px] font-black text-slate-900 mb-10 leading-tight tracking-tighter">會議決議與筆記總覽</h2>
-              <div className="space-y-6 w-full">
-                {config.topics?.length > 0 ? config.topics.map((t, idx) => (
-                  <div key={t.id} onClick={() => setActivePage(t.id)} className="group p-8 md:p-10 bg-white border border-slate-200 rounded-[32px] hover:border-[#338F88] hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col md:flex-row gap-6 md:gap-8 md:items-start relative overflow-hidden">
-                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-transparent group-hover:bg-[#338F88] transition-colors" />
-                    <div className="text-[40px] md:text-[48px] leading-none font-black text-slate-100 group-hover:text-[#338F88]/10 transition-colors w-16 md:w-20 shrink-0 font-mono tracking-tighter pt-1">{String(idx + 1).padStart(2, "0")}</div>
-                    <div className="flex-1">
-                      <h3 className="text-[22px] md:text-[28px] lg:text-[32px] font-bold text-slate-900 mb-4 group-hover:text-[#338F88] transition-colors leading-[1.3] tracking-tight">{t.title}</h3>
-                      <div className="bg-slate-50/80 rounded-2xl p-6 border border-slate-100 group-hover:bg-[#FDFDFD] transition-all text-[15px] md:text-[16px] leading-[1.8] text-slate-700 whitespace-pre-wrap font-medium">
-                        {t.notes && t.notes.trim() !== "" ? t.notes : <span className="text-slate-400 italic font-normal text-sm">尚未記錄任何討論筆記...</span>}
-                      </div>
-                    </div>
-                  </div>
-                )) : (<div className="py-20 text-center text-slate-400">尚未建立任何議題</div>)}
-              </div>
-            </div>
-          )}
-
-          {/* ======================= */}
-          {/* 視圖四：各議題獨立視圖 */}
-          {/* ======================= */}
-          {currentTopic && activePage !== "summary" && activePage !== "agenda" && activePage !== "cover" && (
+          {currentTopic && activePage !== "agenda" && activePage !== "cover" && (
             <div className={`px-8 md:px-16 pt-32 pb-48 mx-auto w-full max-w-[1000px] xl:max-w-[1200px] transition-all`}>
               <div className="flex flex-wrap items-center justify-between gap-4 mb-12">
                 <span className="px-4 py-1.5 rounded-full bg-white border border-slate-200 text-[10px] md:text-[11px] font-black text-slate-400 tracking-widest uppercase shadow-sm">{currentTopic.id}</span>
@@ -865,19 +793,20 @@ const App = () => {
                   {config.topics.findIndex((t) => t.id === currentTopic.id) === 0 ? "← 回議程目錄" : "← 上一個議題"}
                 </button>
 
-                <button
-                  onClick={() => {
-                    const idx = config.topics.findIndex((t) => t.id === currentTopic.id);
-                    if (idx < config.topics.length - 1) setActivePage(config.topics[idx + 1].id);
-                    else setActivePage("summary");
-                  }}
-                  className={`px-10 py-4 md:px-12 md:py-5 bg-[#0F172A] text-white rounded-full md:rounded-[24px] font-bold text-[14px] md:text-[15px] flex items-center gap-3 transition-all hover:-translate-y-1 hover:shadow-xl active:scale-95 ${
-                    currentTopic.status === "resolved" ? "ring-4 ring-[#338F88]/30 animate-pulse" : ""
-                  }`}
-                >
-                  {config.topics.findIndex((t) => t.id === currentTopic.id) === config.topics.length - 1 ? "結束 (看總覽)" : "下一個議題"}
-                  <ArrowRight className="w-4 h-4 md:w-5 md:h-5" />
-                </button>
+                {config.topics.findIndex((t) => t.id === currentTopic.id) !== config.topics.length - 1 && (
+                  <button
+                    onClick={() => {
+                      const idx = config.topics.findIndex((t) => t.id === currentTopic.id);
+                      if (idx < config.topics.length - 1) setActivePage(config.topics[idx + 1].id);
+                    }}
+                    className={`px-10 py-4 md:px-12 md:py-5 bg-[#0F172A] text-white rounded-full md:rounded-[24px] font-bold text-[14px] md:text-[15px] flex items-center gap-3 transition-all hover:-translate-y-1 hover:shadow-xl active:scale-95 ${
+                      currentTopic.status === "resolved" ? "ring-4 ring-[#338F88]/30 animate-pulse" : ""
+                    }`}
+                  >
+                    下一個議題
+                    <ArrowRight className="w-4 h-4 md:w-5 md:h-5" />
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -1007,16 +936,16 @@ const App = () => {
       </div>
 
       {/* ===================================== */}
-      {/* PDF 列印專用排版 (強制 A4 橫式彩色滿版) */}
+      {/* PDF 列印專用排版 (強制白底亮色風格，解決吃背景問題) */}
       {/* ===================================== */}
       <div className="hidden print:block print-container w-full bg-white z-[99999]">
         
-        {/* PDF 首頁：封面 */}
-        <div className="print-page flex flex-col items-center justify-center bg-[#0A0F1C] text-white p-24">
+        {/* PDF 首頁：封面 (改為白底黑字) */}
+        <div className="print-page flex flex-col items-center justify-center bg-white p-24">
           <div className="w-16 h-2 bg-[#B89F5D] mb-8" />
-          <h1 className="font-black tracking-tight mb-8 text-center" style={{ fontSize: `${config.cover?.titleFontSize || 72}px` }}>{config.cover?.title || "未命名會議"}</h1>
-          <p className="text-[28px] text-slate-300 max-w-[800px] text-center mb-16">{config.cover?.desc}</p>
-          <div className="flex gap-16 text-[24px] text-slate-400 font-bold border-t border-white/20 pt-10">
+          <h1 className="font-black tracking-tight mb-8 text-center text-slate-900" style={{ fontSize: `${config.cover?.titleFontSize || 72}px` }}>{config.cover?.title || "未命名會議"}</h1>
+          <p className="text-[28px] text-slate-600 max-w-[800px] text-center mb-16">{config.cover?.desc}</p>
+          <div className="flex gap-16 text-[24px] text-slate-500 font-bold border-t border-slate-200 pt-10">
             <p>Date: {config.sessionDate || "TBD"}</p>
             <p>Attendees: {getAttendeePreview(config.attendees)}</p>
           </div>
@@ -1024,12 +953,12 @@ const App = () => {
 
         {/* PDF 第二頁：議程目錄 */}
         {config.topics?.length > 0 && (
-          <div className="print-page p-20 flex flex-col bg-[#F8FAFC]">
+          <div className="print-page p-20 flex flex-col bg-white">
             <h2 className="text-[56px] font-bold border-b-[8px] border-[#B89F5D] pb-6 mb-12 text-[#0A0F1C]">Meeting Agenda 議程目錄</h2>
             <div className="flex-1 grid grid-cols-2 gap-8 content-start">
               {config.topics.map((t, idx) => (
-                <div key={`agenda-${t.id}`} className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm flex gap-6 items-start">
-                  <div className="text-[40px] font-black text-slate-200 leading-none pt-1">{String(idx + 1).padStart(2, "0")}</div>
+                <div key={`agenda-${t.id}`} className="bg-slate-50 p-8 rounded-3xl border border-slate-200 shadow-sm flex gap-6 items-start">
+                  <div className="text-[40px] font-black text-slate-300 leading-none pt-1">{String(idx + 1).padStart(2, "0")}</div>
                   <div>
                     <h3 className="text-[28px] font-bold text-slate-800 leading-tight mb-2">{t.title}</h3>
                     <p className="text-[18px] text-slate-500 line-clamp-3">{t.desc}</p>
@@ -1044,10 +973,10 @@ const App = () => {
         {config.topics?.map((t, idx) => {
           const images = t.images?.length > 0 ? t.images : t.previewContent ? [t.previewContent] : [];
           return (
-            <div key={`print-topic-${t.id}`} className="print-page flex flex-col p-16">
+            <div key={`print-topic-${t.id}`} className="print-page flex flex-col p-16 bg-white">
               <div className="flex items-end justify-between border-b-[6px] border-[#338F88] pb-6 mb-12">
-                <div className="flex items-center gap-6"><span className="text-[64px] font-black text-slate-200 leading-none">{String(idx + 1).padStart(2, "0")}</span><h2 className="text-[48px] font-bold text-slate-900 leading-tight">{t.title}</h2></div>
-                <span className="text-[20px] font-bold text-[#B89F5D] border border-[#B89F5D] px-6 py-2">{t.status === "resolved" ? "已決議" : "討論中"}</span>
+                <div className="flex items-center gap-6"><span className="text-[64px] font-black text-slate-300 leading-none">{String(idx + 1).padStart(2, "0")}</span><h2 className="text-[48px] font-bold text-slate-900 leading-tight">{t.title}</h2></div>
+                <span className="text-[20px] font-bold text-[#B89F5D] border border-[#B89F5D] px-6 py-2 rounded-full bg-[#FDF9F0]">{t.status === "resolved" ? "已決議" : "討論中"}</span>
               </div>
               <div className="flex-1 grid grid-cols-2 gap-16 overflow-hidden">
                 <div className="flex flex-col">
