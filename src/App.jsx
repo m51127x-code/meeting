@@ -200,14 +200,24 @@ const App = () => {
         navigator.clipboard.writeText(link);
         alert("✅ 已產生唯讀分享連結，並自動複製到剪貼簿！\n您可以直接貼上分享給與會者。");
       } else {
-        alert("產生失敗，無法獲取會議 ID。");
+        alert("產生失敗，無法獲取會議 ID。請確認 Vercel 的 KV 資料庫是否設定完成。");
       }
     } catch (err) {
       console.error(err);
-      alert("發生錯誤，產生連結失敗。請確認 API 是否設定正確。");
+      alert("發生錯誤，產生連結失敗。這是因為您尚未在 Vercel 中加入 API 程式碼。");
     } finally {
       setIsGeneratingLink(false);
     }
+  };
+
+  // ==========================================
+  // [PDF 匯出] 友善提示與觸發列印
+  // ==========================================
+  const handlePrintPDF = () => {
+    alert("【列印 PDF 小提示】\n\n為確保簡報匯出完美，請在接下來的列印視窗中確認：\n1. 配置 (Layout)：選擇「橫向 (Landscape)」\n2. 選項 (Options)：勾選「背景圖形 (Background graphics)」以顯示彩色背景！");
+    setTimeout(() => {
+      window.print();
+    }, 500);
   };
 
   const exportConfigJSON = () => {
@@ -376,7 +386,7 @@ const App = () => {
   const currentTopicImages = currentTopic?.images?.length > 0 ? currentTopic.images : currentTopic?.previewContent ? [currentTopic.previewContent] : [];
   const displayConfig = isConfigOpen && tempConfig ? tempConfig : config;
 
-  // --- 長圖匯出專用 View (隱藏) ---
+  // --- 獨立長圖匯出 View (隱藏渲染區，供 html2canvas 使用) ---
   const renderSingleTopicExport = (t) => {
     if (!t) return null;
     const exportImgs = t.images?.length > 0 ? t.images : t.previewContent ? [t.previewContent] : [];
@@ -397,11 +407,34 @@ const App = () => {
             </span>
           </div>
           <h2 className="text-[56px] font-black text-slate-900 leading-[1.3] tracking-tight mb-12">
-            <span className="relative inline-block px-2"><span className="absolute bottom-[10%] left-[-2%] w-[104%] h-[40%] bg-[#FCEBAF] rounded-sm transform -rotate-1 z-0" /><span className="relative z-10">{t.title}</span></span>
+            <span className="relative inline-block px-2">
+              <span className="absolute bottom-[10%] left-[-2%] w-[104%] h-[40%] bg-[#FCEBAF] rounded-sm transform -rotate-1 z-0" />
+              <span className="relative z-10">{t.title}</span>
+            </span>
           </h2>
-          {t.desc && (<div className="mb-20"><div className="border-l-[6px] border-[#B89F5D] bg-slate-50 rounded-r-3xl p-8 shadow-sm"><div className="text-[20px] text-slate-700 leading-[2] whitespace-pre-wrap font-medium">{t.desc}</div></div></div>)}
-          {t.notes && (<div className="bg-[#0F172A] rounded-[32px] p-12 shadow-lg mb-16 relative"><div className="text-[20px] text-slate-100 leading-[2] font-medium whitespace-pre-wrap">{t.notes}</div></div>)}
-          {exportImgs.length > 0 && (<div className="mt-20 pt-16 border-t-2 border-dashed border-slate-200"><div className="space-y-16 bg-slate-50 p-10 rounded-[40px] border border-slate-100">{exportImgs.map((img, imgIdx) => (<div key={imgIdx} className="bg-white rounded-[32px] p-6 border shadow-sm relative flex flex-col items-center"><img src={img} className="w-full object-contain rounded-[20px]" style={{ maxHeight: "1600px" }} alt="img" /></div>))}</div></div>)}
+          {t.desc && (
+            <div className="mb-20">
+              <div className="border-l-[6px] border-[#B89F5D] bg-slate-50 rounded-r-3xl p-8 shadow-sm">
+                <div className="text-[20px] text-slate-700 leading-[2] whitespace-pre-wrap font-medium">{t.desc}</div>
+              </div>
+            </div>
+          )}
+          {t.notes && (
+            <div className="bg-[#0F172A] rounded-[32px] p-12 shadow-lg mb-16 relative">
+              <div className="text-[20px] text-slate-100 leading-[2] font-medium whitespace-pre-wrap">{t.notes}</div>
+            </div>
+          )}
+          {exportImgs.length > 0 && (
+            <div className="mt-20 pt-16 border-t-2 border-dashed border-slate-200">
+              <div className="space-y-16 bg-slate-50 p-10 rounded-[40px] border border-slate-100">
+                {exportImgs.map((img, imgIdx) => (
+                  <div key={imgIdx} className="bg-white rounded-[32px] p-6 border shadow-sm relative flex flex-col items-center">
+                    <img src={img} className="w-full object-contain rounded-[20px]" style={{ maxHeight: "1600px" }} alt="img" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -414,7 +447,19 @@ const App = () => {
           <div><h1 className="font-bold max-w-3xl leading-tight">{config.cover?.title || "未命名戰略會議"} - 筆記總覽</h1></div>
         </div>
         <div className="px-24 py-20">
-          <div className="space-y-10">{config.topics?.map((t, idx) => (<div key={t.id} className="relative bg-white rounded-[40px] p-10 border shadow-sm flex gap-8 items-start"><div className="text-[48px] leading-none font-black text-slate-100 w-20 shrink-0 font-mono tracking-tighter pt-1">{String(idx + 1).padStart(2, "0")}</div><div className="flex-1"><h3 className="text-[32px] font-black text-slate-800 mb-6">{t.title}</h3><div className="bg-slate-50 rounded-[24px] p-8 border"><div className="text-[18px] text-slate-700 leading-[1.9] whitespace-pre-wrap">{t.notes || "無筆記"}</div></div></div></div>))}</div>
+          <div className="space-y-10">
+            {config.topics?.map((t, idx) => (
+              <div key={t.id} className="relative bg-white rounded-[40px] p-10 border shadow-sm flex gap-8 items-start">
+                <div className="text-[48px] leading-none font-black text-slate-100 w-20 shrink-0 font-mono tracking-tighter pt-1">{String(idx + 1).padStart(2, "0")}</div>
+                <div className="flex-1">
+                  <h3 className="text-[32px] font-black text-slate-800 mb-6">{t.title}</h3>
+                  <div className="bg-slate-50 rounded-[24px] p-8 border">
+                    <div className="text-[18px] text-slate-700 leading-[1.9] whitespace-pre-wrap">{t.notes || "無筆記"}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -434,28 +479,46 @@ const App = () => {
         .custom-scrollbar-light::-webkit-scrollbar-thumb:hover { background: rgba(51, 143, 136, 0.6); }
 
         /* ===================================== */
-        /* PDF 列印專用樣式 */
+        /* PDF 列印專用樣式 (強制 A4 橫式) */
         /* ===================================== */
         @media print {
-          @page { size: 16in 9in landscape; margin: 0; }
-          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+          @page { size: A4 landscape; margin: 0; }
+          html, body {
+            width: 297mm;
+            height: 210mm;
+            margin: 0;
+            padding: 0;
+            background-color: #FFFFFF !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
           .no-print { display: none !important; }
-          body { overflow: auto !important; background: #FFFFFF; }
           aside, main, .fixed { display: none !important; }
-          .print-container { display: block !important; width: 100%; }
+          
+          .print-container { 
+            display: block !important; 
+            width: 297mm; 
+            margin: 0; 
+            padding: 0; 
+          }
           .print-page {
-            width: 16in; height: 9in;
-            page-break-after: always; break-after: page;
-            position: relative; overflow: hidden; background: #FFFFFF;
+            width: 297mm;
+            height: 210mm;
+            page-break-after: always;
+            break-after: page;
+            overflow: hidden;
+            position: relative;
+            background-color: #FFFFFF !important;
+            box-sizing: border-box;
           }
         }
       `}</style>
 
-      {/* Sidebar */}
+      {/* Sidebar 側邊欄 */}
       <aside className={`bg-[#0A0F1C] border-r border-slate-800 flex flex-col z-40 relative transition-all duration-500 ease-in-out overflow-hidden shrink-0 no-print ${isSidebarOpen ? "w-[320px]" : "w-[88px]"}`}>
         <div className="pt-10 pb-6 flex-1 overflow-y-auto custom-scrollbar-dark flex flex-col items-center">
           
-          {/* Logo Area (現在兼具側欄收合開關功能) */}
+          {/* Logo Area (側欄收合開關) - 依需求整合三條線功能 */}
           <button 
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             className={`flex items-center mb-10 text-[#B89F5D] hover:text-[#FCEBAF] transition-all duration-300 cursor-pointer group outline-none ${isSidebarOpen ? 'w-full px-8 justify-start' : 'w-full justify-center'}`}
@@ -514,60 +577,155 @@ const App = () => {
         </div>
       </aside>
 
-      {/* Main Content */}
+      {/* Main Content 主視圖 */}
       <main ref={scrollContainerRef} className={`flex-1 relative overflow-y-auto custom-scrollbar-light transition-all duration-500 no-print ${activePage === "cover" ? "bg-[#0A0F1C]" : "bg-slate-50"} ${isNotesOpen ? "rounded-l-[48px] shadow-2xl" : ""}`}>
         
-        {/* Right Toolbar Actions */}
+        {/* ========================================== */}
+        {/* 全域右上方操作區 (還原原始高質感設計) */}
+        {/* ========================================== */}
         <div className="fixed top-8 right-8 z-50 flex items-center gap-3 no-print">
+          
+          {/* 分享與設定 (僅限主講者) */}
           {!isViewer && (
             <>
-              <button onClick={generateShareLink} disabled={isGeneratingLink} className="px-4 py-2 bg-[#0F172A] text-white rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-slate-800 transition-all shadow-md disabled:opacity-50">
-                <Share2 className="w-4 h-4" /> {isGeneratingLink ? "產生中..." : "分享連結"}
+              <button 
+                onClick={generateShareLink} 
+                disabled={isGeneratingLink} 
+                className="px-5 py-2.5 bg-[#0F172A]/80 border border-white/10 text-white rounded-xl text-[13px] font-bold flex items-center gap-2 hover:bg-slate-800 transition-all shadow-md backdrop-blur-sm disabled:opacity-50"
+                title="產生永久網頁連結"
+              >
+                <Share2 className="w-4 h-4" /> 
+                {isGeneratingLink ? "產生中..." : "分享連結"}
               </button>
-              <button onClick={openConfig} className="w-11 h-11 flex items-center justify-center rounded-xl bg-white/90 backdrop-blur-md border border-slate-200 hover:border-[#338F88] text-slate-500 hover:text-[#338F88] transition-all shadow-sm">
-                <Settings className="w-5 h-5" />
+
+              <button 
+                onClick={openConfig} 
+                className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 border border-transparent hover:bg-white/20 text-slate-300 hover:text-white transition-all backdrop-blur-sm"
+                title="打開控制中心"
+              >
+                <Settings className="w-4 h-4" />
               </button>
             </>
           )}
-          <button onClick={() => window.print()} className="px-4 py-2 bg-gradient-to-r from-[#B89F5D] to-[#A68F50] text-white rounded-xl text-xs font-bold flex items-center gap-2 hover:shadow-lg transition-all">
+
+          {/* 全域匯出 PDF (所有人可見) */}
+          <button 
+            onClick={handlePrintPDF} 
+            className="px-5 py-2.5 bg-[#B89F5D] text-[#0A0F1C] rounded-xl text-[13px] font-bold flex items-center gap-2 hover:bg-[#FCEBAF] transition-all shadow-lg" 
+            title="匯出成 PPT 格式的 PDF"
+          >
             <Printer className="w-4 h-4" /> 匯出 PDF
           </button>
         </div>
 
+        {/* 批量匯出 ZIP 浮動面板 (只在目錄頁且有選取時出現) */}
+        {selectedTopics.length > 0 && activePage === "agenda" && (
+          <div className="fixed top-8 right-52 z-50 flex items-center gap-4 bg-[#0F172A] text-white px-5 h-11 rounded-xl shadow-xl border border-slate-800 animate-in slide-in-from-right-8 fade-in duration-300 no-print">
+            <span className="text-[13px] font-bold flex items-center">已選取 <span className="text-[#B89F5D] mx-1.5 text-[15px]">{selectedTopics.length}</span> 項</span>
+            <div className="w-px h-4 bg-white/20" />
+            <button onClick={handleBatchExportZIP} disabled={isExporting} className="text-[13px] font-bold hover:text-[#B89F5D] flex items-center gap-1.5 transition-colors disabled:opacity-50">
+              <FileDown className={`w-4 h-4 ${isExporting ? "animate-pulse" : ""}`} /> 
+              {isExporting ? "處理中..." : "打包圖檔 ZIP"}
+            </button>
+            <button onClick={() => setSelectedTopics([])} disabled={isExporting} className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-slate-300 hover:bg-white/20 hover:text-white transition-colors ml-1 disabled:opacity-50" title="取消選取"><X className="w-3 h-3" /></button>
+          </div>
+        )}
+
         <div className="flex-1 w-full relative">
+          
+          {/* ======================= */}
+          {/* 視圖一：Cover 首頁 */}
+          {/* ======================= */}
           {activePage === "cover" && (
             <div className="min-h-screen flex flex-col justify-center px-8 md:px-16 pt-32 pb-16 text-white relative overflow-hidden">
               <div className="absolute top-[-10%] right-[-5%] w-[60%] h-[60%] bg-gradient-to-bl from-[#338F88]/20 via-[#B89F5D]/5 to-transparent rounded-full blur-[120px] opacity-40 pointer-events-none" />
               <div className="absolute bottom-[-10%] left-[-5%] w-[50%] h-[50%] bg-[#0F172A] rounded-full blur-[120px] opacity-80 pointer-events-none" />
+              
               <div className="z-10 w-full max-w-[1200px] mx-auto relative flex flex-col lg:flex-row items-center justify-between gap-12">
+                
+                {/* Left Column */}
                 <div className="w-full lg:w-[55%] relative z-10 flex flex-col justify-center">
                   <div className="flex items-center gap-4 mb-8">
                     <div className="w-10 h-1 bg-[#B89F5D] rounded-full" />
-                    <span className="text-[#B89F5D] font-black tracking-[0.3em] text-xs md:text-sm uppercase">Strategic Session</span>
+                    <span className="text-[#B89F5D] font-black tracking-[0.3em] text-xs md:text-sm uppercase">
+                      Strategic Session
+                    </span>
                   </div>
-                  <h1 className="font-bold mb-8 tracking-tight leading-[1.2] drop-shadow-lg break-words whitespace-pre-wrap transition-all duration-300" style={{ fontSize: `clamp(36px, ${displayConfig.cover?.titleFontSize || 72}px, 88px)` }}>
+                  
+                  {/* 首頁標題 (還原 Clamp 縮放) */}
+                  <h1 
+                    className="font-bold mb-8 tracking-tight leading-[1.2] drop-shadow-lg break-words whitespace-pre-wrap transition-all duration-300" 
+                    style={{ fontSize: `clamp(36px, ${displayConfig.cover?.titleFontSize || 72}px, 88px)` }}
+                  >
                     {displayConfig.cover?.title || "未命名會議"}
                   </h1>
-                  {displayConfig.cover?.desc && <p className="text-[16px] md:text-[18px] text-slate-300 mb-12 max-w-[600px] leading-[1.8] font-medium border-l-4 border-[#338F88] pl-6">{displayConfig.cover?.desc}</p>}
+                  
+                  {/* 首頁副標題 */}
+                  {displayConfig.cover?.desc && (
+                    <p className="text-[16px] md:text-[18px] text-slate-300 mb-12 max-w-[600px] leading-[1.8] font-medium border-l-4 border-[#338F88] pl-6">
+                      {displayConfig.cover?.desc}
+                    </p>
+                  )}
+                  
+                  {/* 首頁 Metadata 欄位 */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-12 py-8 border-y border-white/10 w-full max-w-[650px]">
-                    <div className="flex flex-col"><span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-2">Meeting Date</span><span className="text-sm md:text-[15px] font-bold text-slate-200 flex items-center gap-2"><Calendar className="w-4 h-4 text-[#B89F5D]" /> {displayConfig.sessionDate || "TBD"}</span></div>
-                    <div className="flex flex-col"><span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-2">Attendees</span><span className="text-sm md:text-[15px] font-bold text-slate-200 flex items-center gap-2 truncate" title={displayConfig.attendees}><Users className="w-4 h-4 text-[#B89F5D]" /> {getAttendeePreview(displayConfig.attendees)}</span></div>
-                    <div className="flex flex-col"><span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-2">Agenda</span><span className="text-sm md:text-[15px] font-bold text-[#B89F5D] flex items-center gap-2"><ClipboardList className="w-4 h-4" /> {displayConfig.topics?.length || 0} ITEMS</span></div>
+                    <div className="flex flex-col">
+                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-2">Meeting Date</span>
+                      <span className="text-sm md:text-[15px] font-bold text-slate-200 flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-[#B89F5D]" /> {displayConfig.sessionDate || "TBD"}
+                      </span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-2">Attendees</span>
+                      <span className="text-sm md:text-[15px] font-bold text-slate-200 flex items-center gap-2 truncate" title={displayConfig.attendees}>
+                        <Users className="w-4 h-4 text-[#B89F5D]" /> {getAttendeePreview(displayConfig.attendees)}
+                      </span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-2">Agenda</span>
+                      <span className="text-sm md:text-[15px] font-bold text-[#B89F5D] flex items-center gap-2">
+                        <ClipboardList className="w-4 h-4" /> {displayConfig.topics?.length || 0} ITEMS
+                      </span>
+                    </div>
                   </div>
+                  
                   <button onClick={() => { if (displayConfig.topics?.length > 0) setActivePage("agenda"); else openConfig(); }} className="px-6 py-3.5 bg-white text-[#0A0F1C] rounded-2xl font-bold text-[15px] flex items-center gap-3 transition-all hover:bg-slate-200 shadow-xl group w-fit">
-                    {displayConfig.topics?.length > 0 ? "開始進行會議" : "設定會議內容"} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    {displayConfig.topics?.length > 0 ? "開始進行會議" : "設定會議內容"} 
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </button>
                 </div>
+                
+                {/* Right Column (Diamond Fixed Proportions 45%) */}
                 <div className="hidden lg:flex w-[45%] justify-center items-center pointer-events-none z-0">
                   <div className="relative w-[360px] h-[360px] xl:w-[460px] xl:h-[460px] flex justify-center items-center">
                     <div className="absolute inset-0 border border-white/5 rounded-full animate-[spin_60s_linear_infinite]" />
                     <div className="absolute inset-10 xl:inset-12 border border-[#B89F5D]/20 rounded-full animate-[spin_40s_linear_infinite_reverse]" />
                     <div className="absolute inset-20 xl:inset-24 border border-dashed border-[#338F88]/30 rounded-full animate-[spin_80s_linear_infinite]" />
+                    
                     <div className="w-48 h-48 xl:w-64 xl:h-64 bg-gradient-to-br from-[#B89F5D]/80 to-[#338F88]/80 rounded-[32px] rotate-45 shadow-[0_0_80px_rgba(184,159,93,0.15)] backdrop-blur-3xl flex items-center justify-center relative overflow-hidden group">
                       <div className="absolute inset-0 bg-white/5 group-hover:bg-white/10 transition-colors" />
                       <div className="w-40 h-40 xl:w-52 xl:h-52 bg-[#0A0F1C] rounded-[24px] flex items-center justify-center border border-white/10 shadow-inner relative overflow-hidden">
                         <div className="w-16 h-16 xl:w-20 xl:h-20 bg-gradient-to-tr from-[#B89F5D] to-[#FCEBAF] rounded-xl shadow-[0_0_40px_rgba(252,235,175,0.3)] animate-pulse" />
                       </div>
+                    </div>
+
+                    <div className="absolute top-4 -right-4 xl:top-8 xl:-right-6 bg-[#0F172A]/90 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-xl transform hover:-translate-y-1 transition-transform">
+                      <span className="text-[10px] text-slate-400 font-bold tracking-widest uppercase block mb-1.5">
+                        System Status
+                      </span>
+                      <span className="text-[13px] font-bold text-[#338F88] flex items-center gap-2">
+                        <div className="w-2 h-2 bg-[#338F88] rounded-full animate-ping" />{" "}
+                        Synchronized
+                      </span>
+                    </div>
+
+                    <div className="absolute bottom-8 -left-4 xl:bottom-12 xl:-left-6 bg-[#0F172A]/90 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-xl transform hover:-translate-y-1 transition-transform">
+                      <span className="text-[10px] text-slate-400 font-bold tracking-widest uppercase block mb-1.5">
+                        Active Workspace
+                      </span>
+                      <span className="text-[13px] font-bold text-white flex items-center gap-2">
+                        <Layout className="w-3.5 h-3.5 text-[#B89F5D]" /> Board Ready
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -575,6 +733,9 @@ const App = () => {
             </div>
           )}
 
+          {/* ======================= */}
+          {/* 視圖二：Agenda 目錄頁 */}
+          {/* ======================= */}
           {activePage === "agenda" && (
             <div className="min-h-screen px-8 md:px-16 pt-32 pb-24 mx-auto w-full max-w-[1000px] xl:max-w-[1200px] transition-all flex flex-col justify-start">
               <div className="flex items-center gap-4 mb-8">
@@ -595,12 +756,23 @@ const App = () => {
                       <h3 className="text-[22px] md:text-[28px] lg:text-[32px] font-bold text-slate-900 mb-3 group-hover:text-[#338F88] transition-colors leading-[1.3] tracking-tight">{t.title}</h3>
                       <p className="text-[15px] md:text-[16px] text-slate-600 font-medium whitespace-pre-wrap leading-[1.8] max-w-3xl opacity-90">{t.desc || "無議題描述"}</p>
                     </div>
+                    
+                    {/* 獨立議題選取與匯出圖塊 */}
+                    <div className="shrink-0 mt-4 md:mt-2 flex items-center gap-3">
+                      <button onClick={(e) => { e.stopPropagation(); setSelectedTopics((prev) => prev.includes(t.id) ? prev.filter((id) => id !== t.id) : [...prev, t.id] ); }} className={`w-9 h-9 rounded-lg border-2 flex items-center justify-center transition-all shadow-sm ${selectedTopics.includes(t.id) ? "bg-[#338F88] border-[#338F88] text-white" : "bg-white border-slate-200 text-transparent hover:border-[#338F88]/50 hover:bg-[#FDF9F0]"}`} title="選取以批次匯出"><Check className="w-4 h-4" /></button>
+                      <div className="w-px h-6 bg-slate-200" />
+                      <button onClick={(e) => { e.stopPropagation(); handleExportImage(t.id); }} className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all shadow-sm ${isExporting && exportingTopicId === t.id ? "bg-[#0F172A] text-[#B89F5D] border-[#0F172A] animate-pulse" : "bg-white border-slate-200 text-slate-400 hover:text-[#B89F5D] hover:border-[#B89F5D] hover:bg-[#FDF9F0]"}`} title="匯出此議題長圖"><FileDown className="w-4 h-4" /></button>
+                      <div className="w-10 h-10 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center group-hover:bg-[#338F88] group-hover:text-white group-hover:border-[#338F88] transition-all shadow-sm" title="進入議題"><ArrowRight className="w-4 h-4" /></div>
+                    </div>
                   </div>
                 )) : (<div className="py-20 text-center text-slate-400 font-medium bg-white rounded-[32px] border border-dashed border-slate-300">尚未建立任何議題</div>)}
               </div>
             </div>
           )}
 
+          {/* ======================= */}
+          {/* 視圖三：Summary 總覽頁 */}
+          {/* ======================= */}
           {activePage === "summary" && (
             <div className="min-h-screen px-8 md:px-16 pt-32 pb-24 mx-auto w-full max-w-[1000px] xl:max-w-[1200px] transition-all flex flex-col justify-start">
               <div className="flex items-center gap-4 mb-10">
@@ -625,14 +797,24 @@ const App = () => {
             </div>
           )}
 
+          {/* ======================= */}
+          {/* 視圖四：各議題獨立視圖 */}
+          {/* ======================= */}
           {currentTopic && activePage !== "summary" && activePage !== "agenda" && activePage !== "cover" && (
             <div className={`px-8 md:px-16 pt-32 pb-48 mx-auto w-full max-w-[1000px] xl:max-w-[1200px] transition-all`}>
               <div className="flex flex-wrap items-center justify-between gap-4 mb-12">
                 <span className="px-4 py-1.5 rounded-full bg-white border border-slate-200 text-[10px] md:text-[11px] font-black text-slate-400 tracking-widest uppercase shadow-sm">{currentTopic.id}</span>
                 {!isViewer && (
-                  <div className="flex gap-1.5 bg-white p-1 rounded-xl border border-slate-200 shadow-sm no-print">
-                    <button onClick={() => updateTopic(currentTopic.id, "status", "discussing")} className={`px-4 py-1.5 rounded-lg text-[11px] md:text-xs font-bold transition-all ${currentTopic.status === "discussing" ? "bg-slate-50 shadow-sm text-amber-600" : "text-slate-400 hover:text-slate-600"}`}>討論中</button>
-                    <button onClick={() => updateTopic(currentTopic.id, "status", "resolved")} className={`px-4 py-1.5 rounded-lg text-[11px] md:text-xs font-bold transition-all ${currentTopic.status === "resolved" ? "bg-[#338F88] text-white shadow-sm" : "text-slate-400 hover:text-slate-600"}`}>已決議</button>
+                  <div className="flex gap-3 md:gap-4 items-center">
+                    <button onClick={() => handleExportImage(currentTopic.id)} disabled={isExporting} className="px-4 py-2 bg-[#0F172A] text-white rounded-xl text-[11px] md:text-xs font-bold flex items-center gap-1.5 hover:bg-slate-800 transition-all shadow-sm">
+                      <FileDown className={`w-3.5 h-3.5 md:w-4 md:h-4 ${isExporting && exportingTopicId === currentTopic.id ? "animate-pulse" : ""}`}/>
+                      {isExporting && exportingTopicId === currentTopic.id ? "匯出中..." : "匯出此圖檔"}
+                    </button>
+                    <div className="w-px h-5 bg-slate-200" />
+                    <div className="flex gap-1.5 bg-white p-1 rounded-xl border border-slate-200 shadow-sm no-print">
+                      <button onClick={() => updateTopic(currentTopic.id, "status", "discussing")} className={`px-4 py-1.5 rounded-lg text-[11px] md:text-xs font-bold transition-all ${currentTopic.status === "discussing" ? "bg-slate-50 shadow-sm text-amber-600" : "text-slate-400 hover:text-slate-600"}`}>討論中</button>
+                      <button onClick={() => updateTopic(currentTopic.id, "status", "resolved")} className={`px-4 py-1.5 rounded-lg text-[11px] md:text-xs font-bold transition-all ${currentTopic.status === "resolved" ? "bg-[#338F88] text-white shadow-sm" : "text-slate-400 hover:text-slate-600"}`}>已決議</button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -669,18 +851,46 @@ const App = () => {
                   ) : (<div className="flex flex-col items-center text-slate-300 font-medium text-xs md:text-sm gap-3 text-center"><ImageIcon className="w-12 h-12 opacity-30" /><span>尚未上傳議題視覺圖檔</span></div>)}
                 </div>
               </div>
+
+              {/* 回復：最下方導航列 (上一個議題 / 下一個議題) */}
+              <div className="mt-16 pt-8 border-t border-slate-200 flex justify-center items-center gap-6 md:gap-8">
+                <button
+                  onClick={() => {
+                    const idx = config.topics.findIndex((t) => t.id === currentTopic.id);
+                    if (idx > 0) setActivePage(config.topics[idx - 1].id);
+                    else setActivePage("agenda");
+                  }}
+                  className="text-slate-400 font-bold text-[13px] md:text-sm hover:text-slate-800 transition-all"
+                >
+                  {config.topics.findIndex((t) => t.id === currentTopic.id) === 0 ? "← 回議程目錄" : "← 上一個議題"}
+                </button>
+
+                <button
+                  onClick={() => {
+                    const idx = config.topics.findIndex((t) => t.id === currentTopic.id);
+                    if (idx < config.topics.length - 1) setActivePage(config.topics[idx + 1].id);
+                    else setActivePage("summary");
+                  }}
+                  className={`px-10 py-4 md:px-12 md:py-5 bg-[#0F172A] text-white rounded-full md:rounded-[24px] font-bold text-[14px] md:text-[15px] flex items-center gap-3 transition-all hover:-translate-y-1 hover:shadow-xl active:scale-95 ${
+                    currentTopic.status === "resolved" ? "ring-4 ring-[#338F88]/30 animate-pulse" : ""
+                  }`}
+                >
+                  {config.topics.findIndex((t) => t.id === currentTopic.id) === config.topics.length - 1 ? "結束 (看總覽)" : "下一個議題"}
+                  <ArrowRight className="w-4 h-4 md:w-5 md:h-5" />
+                </button>
+              </div>
             </div>
           )}
 
           {renderSingleTopicExport(config.topics.find((t) => t.id === exportingTopicId) || currentTopic)}
-          {renderSummaryExport()}
         </div>
       </main>
 
+      {/* 筆記面板遮罩與側滑區 */}
       <div className={`fixed inset-0 bg-slate-900/20 backdrop-blur-[4px] z-[90] transition-all duration-500 no-print ${isNotesOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`} onClick={() => setIsNotesOpen(false)} />
 
       <div className={`fixed bottom-12 right-12 w-[460px] h-[80%] bg-white/95 backdrop-blur-3xl shadow-[0_40px_100px_-20px_rgba(0,0,0,0.4)] z-[100] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] rounded-[40px] border border-white flex flex-col overflow-hidden no-print ${isNotesOpen ? "translate-y-0 scale-100 opacity-100" : "translate-y-20 scale-90 opacity-0 pointer-events-none"}`}>
-        {currentTopic && activePage !== "summary" && (
+        {currentTopic && activePage !== "agenda" && activePage !== "cover" && (
           <div className="h-full flex flex-col">
             <div className="px-8 pt-8 pb-3 flex justify-between items-start">
               <div>
@@ -707,12 +917,14 @@ const App = () => {
         )}
       </div>
 
-      {!isViewer && !isNotesOpen && activePage !== "cover" && activePage !== "agenda" && activePage !== "summary" && (
+      {/* 浮動鉛筆按鈕 */}
+      {!isViewer && !isNotesOpen && activePage !== "cover" && activePage !== "agenda" && (
         <button onClick={() => setIsNotesOpen(true)} className="fixed right-10 bottom-10 w-14 h-14 bg-[#0F172A] text-white rounded-full flex items-center justify-center shadow-[0_20px_40px_rgba(15,23,42,0.4)] z-40 hover:scale-110 hover:bg-[#1E293B] transition-all duration-300 group no-print">
           <Edit3 className="w-6 h-6 text-[#B89F5D] group-hover:rotate-12 transition-transform" />
         </button>
       )}
 
+      {/* 設定控制面板 */}
       <div className={`fixed inset-y-0 right-0 w-[420px] bg-white border-l border-slate-100 shadow-2xl z-[200] transition-all duration-500 no-print ${isConfigOpen ? "translate-x-0" : "translate-x-full"}`}>
         {tempConfig && (
           <div className="h-full flex flex-col">
@@ -722,12 +934,30 @@ const App = () => {
                 <button onClick={exportConfigJSON} className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-[#0F172A] text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-colors shadow-lg"><FileDown className="w-4 h-4" /> 儲存專案</button>
                 <label className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-[#B89F5D] text-white rounded-xl text-xs font-bold cursor-pointer hover:bg-[#A68F50] transition-colors shadow-lg"><Upload className="w-4 h-4" /> 讀取專案<input type="file" className="hidden" accept=".json" onChange={importConfigJSON} /></label>
               </div>
+              
               <div className="space-y-5">
                 <span className="text-[11px] font-black text-slate-400 tracking-widest uppercase">基本會議設定</span>
+                
+                {/* 補回：會議標題與字體拉桿 */}
                 <div>
-                  <div className="flex justify-between items-end mb-1.5 ml-1"><label className="text-[13px] font-bold text-slate-500 block">會議標題</label></div>
+                  <div className="flex justify-between items-end mb-1.5 ml-1">
+                    <label className="text-[13px] font-bold text-slate-500 block">會議標題</label>
+                    <span className="text-[11px] font-bold text-[#338F88]">字體大小: {tempConfig.cover?.titleFontSize || 72}px</span>
+                  </div>
                   <textarea className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-[14px] font-bold outline-none h-20 resize-none focus:border-[#338F88] no-scrollbar mb-2.5" value={tempConfig.cover?.title || ""} placeholder="在此輸入會議標題" onChange={(e) => setTempConfig({ ...tempConfig, cover: { ...tempConfig.cover, title: e.target.value } })} />
+                  <div className="flex items-center gap-3 px-1 mb-4">
+                    <span className="text-[11px] text-slate-400 font-bold">小</span>
+                    <input type="range" min="32" max="120" step="2" className="flex-1 accent-[#338F88] h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer" value={tempConfig.cover?.titleFontSize || 72} onChange={(e) => setTempConfig({ ...tempConfig, cover: { ...tempConfig.cover, titleFontSize: Number(e.target.value) } })} />
+                    <span className="text-[11px] text-slate-400 font-bold">大</span>
+                  </div>
                 </div>
+
+                {/* 補回：會議描述/副標題設定 */}
+                <div>
+                  <label className="text-[13px] font-bold text-slate-500 ml-1 mb-1.5 flex items-center gap-1.5">會議描述 / 背景</label>
+                  <textarea className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-[14px] font-bold outline-none h-20 resize-none focus:border-[#338F88] no-scrollbar mb-2.5" value={tempConfig.cover?.desc || ""} placeholder="在此輸入會議副標題或描述" onChange={(e) => setTempConfig({ ...tempConfig, cover: { ...tempConfig.cover, desc: e.target.value } })} />
+                </div>
+
                 <div><label className="text-[13px] font-bold text-slate-500 ml-1 mb-1.5 flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" /> 會議日期</label><input type="date" className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-[14px] outline-none" value={tempConfig.sessionDate || ""} onChange={(e) => setTempConfig({ ...tempConfig, sessionDate: e.target.value })} /></div>
                 <div><label className="text-[13px] font-bold text-slate-500 ml-1 mb-1.5 flex items-center gap-1.5"><Users className="w-3.5 h-3.5" /> 與會人員</label><input className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-[14px] outline-none" value={tempConfig.attendees || ""} onChange={(e) => setTempConfig({ ...tempConfig, attendees: e.target.value })} /></div>
               </div>
@@ -777,12 +1007,14 @@ const App = () => {
       </div>
 
       {/* ===================================== */}
-      {/* [新增] PDF 列印專用視圖 (平時隱藏，列印時顯示) */}
+      {/* PDF 列印專用排版 (強制 A4 橫式彩色滿版) */}
       {/* ===================================== */}
       <div className="hidden print:block print-container w-full bg-white z-[99999]">
+        
+        {/* PDF 首頁：封面 */}
         <div className="print-page flex flex-col items-center justify-center bg-[#0A0F1C] text-white p-24">
           <div className="w-16 h-2 bg-[#B89F5D] mb-8" />
-          <h1 className="text-[72px] font-black tracking-tight mb-8 text-center">{config.cover?.title || "未命名會議"}</h1>
+          <h1 className="font-black tracking-tight mb-8 text-center" style={{ fontSize: `${config.cover?.titleFontSize || 72}px` }}>{config.cover?.title || "未命名會議"}</h1>
           <p className="text-[28px] text-slate-300 max-w-[800px] text-center mb-16">{config.cover?.desc}</p>
           <div className="flex gap-16 text-[24px] text-slate-400 font-bold border-t border-white/20 pt-10">
             <p>Date: {config.sessionDate || "TBD"}</p>
@@ -790,6 +1022,25 @@ const App = () => {
           </div>
         </div>
 
+        {/* PDF 第二頁：議程目錄 */}
+        {config.topics?.length > 0 && (
+          <div className="print-page p-20 flex flex-col bg-[#F8FAFC]">
+            <h2 className="text-[56px] font-bold border-b-[8px] border-[#B89F5D] pb-6 mb-12 text-[#0A0F1C]">Meeting Agenda 議程目錄</h2>
+            <div className="flex-1 grid grid-cols-2 gap-8 content-start">
+              {config.topics.map((t, idx) => (
+                <div key={`agenda-${t.id}`} className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm flex gap-6 items-start">
+                  <div className="text-[40px] font-black text-slate-200 leading-none pt-1">{String(idx + 1).padStart(2, "0")}</div>
+                  <div>
+                    <h3 className="text-[28px] font-bold text-slate-800 leading-tight mb-2">{t.title}</h3>
+                    <p className="text-[18px] text-slate-500 line-clamp-3">{t.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* PDF 後續頁面：各議題獨立一頁 */}
         {config.topics?.map((t, idx) => {
           const images = t.images?.length > 0 ? t.images : t.previewContent ? [t.previewContent] : [];
           return (
@@ -811,20 +1062,6 @@ const App = () => {
           );
         })}
 
-        <div className="print-page p-20 flex flex-col bg-slate-50">
-          <h2 className="text-[56px] font-bold border-b-[8px] border-[#338F88] pb-6 mb-12">Executive Summary</h2>
-          <div className="space-y-8">
-            {config.topics?.map((t, idx) => (
-              <div key={`summary-${t.id}`} className="flex items-start gap-6 border-b border-slate-200 pb-8">
-                <span className="text-[32px] font-bold text-[#B89F5D]">{String(idx + 1).padStart(2, '0')}</span>
-                <div>
-                  <h3 className="text-[32px] font-bold text-slate-800 mb-2">{t.title}</h3>
-                  <p className="text-[24px] text-slate-600">狀態: {t.status === 'resolved' ? '✅ 已決議' : '⏳ 討論中'}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
       {/* ===================================== */}
 
