@@ -100,9 +100,6 @@ const App = () => {
   useEffect(() => {
     sessionStorage.setItem("strategyMeetingData", JSON.stringify(config));
   }, [config]);
-useEffect(() => {
-    sessionStorage.setItem("strategyMeetingData", JSON.stringify(config));
-  }, [config]);
 
   // ==========================================
   // [新增區塊 B]：與會者專用 - 載入雲端資料
@@ -794,6 +791,23 @@ useEffect(() => {
         .custom-scrollbar-light::-webkit-scrollbar-thumb:hover {
           background: rgba(51, 143, 136, 0.6);
         }
+        /* ===================================== */
+        /* [新增] PDF 列印專用樣式 */
+        /* ===================================== */
+        @media print {
+          @page { size: 16in 9in landscape; margin: 0; }
+          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+          .no-print { display: none !important; }
+          body { overflow: auto !important; background: #FFFFFF; }
+          aside, main, .fixed { display: none !important; }
+          .print-container { display: block !important; width: 100%; }
+          .print-page {
+            width: 16in; height: 9in;
+            page-break-after: always; break-after: page;
+            position: relative; overflow: hidden; background: #FFFFFF;
+          }
+        }
+        /* ===================================== */
       `}</style>
 
       {/* Sidebar */}
@@ -970,44 +984,45 @@ useEffect(() => {
         </button>
 
         {/* Right Toolbar Actions */}
-        <div className="fixed top-8 right-8 z-50 flex items-center gap-3">
-          {selectedTopics.length > 0 && activePage === "agenda" && (
-            <div className="flex items-center gap-4 bg-[#0F172A] text-white px-5 h-11 rounded-xl shadow-xl border border-slate-800 animate-in slide-in-from-right-8 fade-in duration-300">
-              <span className="text-[13px] font-bold flex items-center">
-                已選取{" "}
-                <span className="text-[#B89F5D] mx-1.5 text-[15px]">
-                  {selectedTopics.length}
-                </span>{" "}
-                項
-              </span>
-              <div className="w-px h-4 bg-white/20" />
+        <div className="fixed top-8 right-8 z-50 flex items-center gap-3 no-print">
+          
+          {/* == 如果是主講者，顯示分享與設定按鈕 == */}
+          {!isViewer && (
+            <>
+              {/* 分享連結按鈕 */}
               <button
-                onClick={handleBatchExportZIP}
-                disabled={isExporting}
-                className="text-[13px] font-bold hover:text-[#B89F5D] flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                onClick={generateShareLink}
+                disabled={isGeneratingLink}
+                className="px-4 py-2 bg-[#0F172A] text-white rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-slate-800 transition-all shadow-md disabled:opacity-50"
               >
-                {isExporting ? (
-                  <>
-                    <FileDown className="w-4 h-4 animate-pulse" />
-                    {exportingTopicId === "packaging"
-                      ? "打包中..."
-                      : "處理中..."}
-                  </>
-                ) : (
-                  <>
-                    <FileDown className="w-4 h-4" /> 打包 ZIP
-                  </>
-                )}
+                <Share2 className="w-4 h-4" /> 
+                {isGeneratingLink ? "產生中..." : "分享連結"}
               </button>
+
+              {/* 原本的設定按鈕 */}
               <button
-                onClick={() => setSelectedTopics([])}
-                disabled={isExporting}
-                className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-slate-300 hover:bg-white/20 hover:text-white transition-colors ml-1 disabled:opacity-50"
-                title="取消選取"
+                onClick={openConfig}
+                className={`w-11 h-11 flex items-center justify-center rounded-xl transition-all shadow-sm ${
+                  activePage === "cover"
+                    ? "bg-white/5 border border-transparent text-white/30 hover:bg-white/10 hover:text-white/80"
+                    : "bg-white/90 backdrop-blur-md border border-slate-200 hover:border-[#338F88] text-slate-500 hover:text-[#338F88]"
+                }`}
+                title="設定專案"
               >
-                <X className="w-3 h-3" />
+                <Settings className="w-5 h-5" />
               </button>
-            </div>
+            </>
+          )}
+
+          {/* == 所有人(包含與會者)都可以匯出 PDF == */}
+          <button
+            onClick={() => window.print()}
+            className="px-4 py-2 bg-gradient-to-r from-[#B89F5D] to-[#A68F50] text-white rounded-xl text-xs font-bold flex items-center gap-2 hover:shadow-lg transition-all"
+            title="匯出 PDF 簡報"
+          >
+            <Printer className="w-4 h-4" /> 匯出 PDF
+          </button>
+        </div>
           )}
           
           {/* Subtle Settings Button always visible */}
@@ -1586,34 +1601,42 @@ useEffect(() => {
 
             <div className="flex-1 px-6 pb-4 mt-2">
               <div className="w-full h-full bg-slate-50/70 rounded-[24px] shadow-[inset_0_2px_12px_rgba(0,0,0,0.05)] border border-slate-200/50 p-6 focus-within:bg-white focus-within:shadow-[inset_0_4px_20px_rgba(0,0,0,0.03)] transition-all">
-                <textarea
-                  ref={notesRef}
-                  className="w-full h-full bg-transparent outline-none resize-none text-[16px] leading-[1.8] text-slate-700 font-medium placeholder:text-slate-300 no-scrollbar"
-                  value={currentTopic.notes || ""}
-                  onChange={(e) => {
-                    updateTopic(currentTopic.id, "notes", e.target.value);
-                  }}
-                  placeholder="在此記錄討論共識、行動決策或待辦清單..."
-                />
+                {/* 加上 isViewer 的判斷 */}
+                {isViewer ? (
+                  <div className="w-full h-full overflow-y-auto text-[16px] leading-[1.8] text-slate-700 font-medium whitespace-pre-wrap custom-scrollbar-light">
+                    {currentTopic.notes || "此議題尚無筆記。"}
+                  </div>
+                ) : (
+                  <textarea
+                    ref={notesRef}
+                    className="w-full h-full bg-transparent outline-none resize-none text-[16px] leading-[1.8] text-slate-700 font-medium placeholder:text-slate-300 no-scrollbar"
+                    value={currentTopic.notes || ""}
+                    onChange={(e) => {
+                      updateTopic(currentTopic.id, "notes", e.target.value);
+                    }}
+                    placeholder="在此記錄討論共識、行動決策或待辦清單..."
+                  />
+                )}
               </div>
             </div>
 
-            <div className="px-8 pb-8 pt-2 flex flex-wrap gap-2">
-              {QUICK_TAGS.map((tag, i) => (
-                <button
-                  key={i}
-                  onClick={() => appendQuickTag(tag.prefix)}
-                  className={`px-4 py-2 rounded-[12px] text-[11px] font-bold border backdrop-blur-sm transition-all shadow-sm active:scale-95 ${tag.color}`}
-                >
-                  {tag.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
+            {/* 標籤按鈕也只有主講者能用 */}
+            {!isViewer && (
+              <div className="px-8 pb-8 pt-2 flex flex-wrap gap-2">
+                {QUICK_TAGS.map((tag, i) => (
+                  <button
+                    key={i}
+                    onClick={() => appendQuickTag(tag.prefix)}
+                    className={`px-4 py-2 rounded-[12px] text-[11px] font-bold border backdrop-blur-sm transition-all shadow-sm active:scale-95 ${tag.color}`}
+                  >
+                    {tag.label}
+                  </button>
+                ))}
+              </div>
+            )}
 
-      {!isNotesOpen && activePage !== "cover" && activePage !== "agenda" && activePage !== "summary" && (
+      {/* 加上 !isViewer，讓與會者唯讀模式時看不到右下角的鉛筆編輯按鈕 */}
+      {!isViewer && !isNotesOpen && activePage !== "cover" && activePage !== "agenda" && activePage !== "summary" && (
         <button
           onClick={() => setIsNotesOpen(true)}
           className="fixed right-10 bottom-10 w-14 h-14 bg-[#0F172A] text-white rounded-full flex items-center justify-center shadow-[0_20px_40px_rgba(15,23,42,0.4)] z-40 hover:scale-110 hover:bg-[#1E293B] transition-all duration-300 group"
@@ -1967,7 +1990,79 @@ useEffect(() => {
           </div>
         )}
       </div>
+{/* ===================================== */}
+      {/* [新增] PDF 列印專用視圖 (平時隱藏，列印時顯示) */}
+      {/* ===================================== */}
+      <div className="hidden print:block print-container w-full bg-white z-[99999]">
+        
+        {/* PDF 首頁：封面 */}
+        <div className="print-page flex flex-col items-center justify-center bg-[#0A0F1C] text-white p-24">
+          <div className="w-16 h-2 bg-[#B89F5D] mb-8" />
+          <h1 className="text-[72px] font-black tracking-tight mb-8 text-center">{config.cover?.title || "未命名會議"}</h1>
+          <p className="text-[28px] text-slate-300 max-w-[800px] text-center mb-16">{config.cover?.desc}</p>
+          <div className="flex gap-16 text-[24px] text-slate-400 font-bold border-t border-white/20 pt-10">
+            <p>Date: {config.sessionDate || "TBD"}</p>
+            <p>Attendees: {getAttendeePreview(config.attendees)}</p>
+          </div>
+        </div>
 
+        {/* PDF 中間頁：各議題獨立一頁 */}
+        {config.topics?.map((t, idx) => {
+          const images = t.images?.length > 0 ? t.images : t.previewContent ? [t.previewContent] : [];
+          return (
+            <div key={`print-topic-${t.id}`} className="print-page flex flex-col p-16">
+              <div className="flex items-end justify-between border-b-[6px] border-[#338F88] pb-6 mb-12">
+                <div className="flex items-center gap-6">
+                  <span className="text-[64px] font-black text-slate-200 leading-none">{String(idx + 1).padStart(2, "0")}</span>
+                  <h2 className="text-[48px] font-bold text-slate-900 leading-tight">{t.title}</h2>
+                </div>
+                <span className="text-[20px] font-bold text-[#B89F5D] border border-[#B89F5D] px-6 py-2">
+                  {t.status === "resolved" ? "已決議" : "討論中"}
+                </span>
+              </div>
+              
+              <div className="flex-1 grid grid-cols-2 gap-16 overflow-hidden">
+                {/* 左側筆記區 */}
+                <div className="flex flex-col">
+                  <h3 className="text-[28px] font-bold text-[#B89F5D] mb-6 flex items-center gap-3">
+                    <span className="w-4 h-4 bg-[#B89F5D]" /> 決議與筆記
+                  </h3>
+                  <div className="text-[24px] leading-[1.8] text-slate-700 whitespace-pre-wrap font-medium">
+                    {t.notes || "尚未記錄筆記..."}
+                  </div>
+                </div>
+                
+                {/* 右側視覺區 */}
+                <div className="flex flex-col items-center justify-center bg-slate-50 border border-slate-200 p-8 rounded-3xl">
+                  {images.length > 0 ? (
+                    <img src={images[0]} className="max-w-full max-h-[500px] object-contain shadow-sm" alt="視覺參考" />
+                  ) : (
+                    <p className="text-slate-400 text-[24px] font-medium tracking-widest">無視覺圖檔</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        {/* PDF 最後一頁：總覽 */}
+        <div className="print-page p-20 flex flex-col bg-slate-50">
+          <h2 className="text-[56px] font-bold border-b-[8px] border-[#338F88] pb-6 mb-12">Executive Summary</h2>
+          <div className="space-y-8">
+            {config.topics?.map((t, idx) => (
+              <div key={`summary-${t.id}`} className="flex items-start gap-6 border-b border-slate-200 pb-8">
+                <span className="text-[32px] font-bold text-[#B89F5D]">{String(idx + 1).padStart(2, '0')}</span>
+                <div>
+                  <h3 className="text-[32px] font-bold text-slate-800 mb-2">{t.title}</h3>
+                  <p className="text-[24px] text-slate-600">狀態: {t.status === 'resolved' ? '✅ 已決議' : '⏳ 討論中'}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+      </div>
+      {/* ===================================== */}
       {fullscreenImg && (
         <div
           onClick={() => setFullscreenImg(null)}
