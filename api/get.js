@@ -23,7 +23,8 @@ import {
   List,
   FileText,
   Share2,
-  Printer
+  Printer,
+  Clock // 加入時鐘圖標
 } from "lucide-react";
 
 const THEME = {
@@ -73,22 +74,39 @@ const App = () => {
   });
 
   useEffect(() => {
-    sessionStorage.setItem("strategyMeetingData", JSON.stringify(config));
+    try {
+      sessionStorage.setItem("strategyMeetingData", JSON.stringify(config));
+    } catch (err) {
+      console.warn("寫入 SessionStorage 失敗，可能是因為圖片過大超出限制：", err);
+    }
   }, [config]);
 
-  // [與會者] 載入雲端資料
+  // [與會者] 載入雲端資料 (已改為支援本地預覽模擬)
   useEffect(() => {
     if (isViewer && meetingId) {
-      fetch(`/api/get?id=${meetingId}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data && !data.error) {
-            setConfig(data);
-          } else {
-            alert("此會議紀錄不存在或已失效。");
-          }
-        })
-        .catch(err => console.error("讀取資料失敗", err));
+      try {
+        // 模擬後端：在預覽環境優先從 localStorage 讀取
+        const localData = localStorage.getItem(`meeting_${meetingId}`);
+        if (localData) {
+          setConfig(JSON.parse(localData));
+          return;
+        }
+
+        // 實際部署用的 API 呼叫 (加入 try-catch 避免 Blob 預覽環境當機)
+        fetch(`/api/get?id=${meetingId}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data && !data.error) {
+              setConfig(data);
+            } else {
+              alert("此會議紀錄不存在或已失效。");
+            }
+          })
+          .catch(err => console.error("讀取資料失敗", err));
+      } catch (err) {
+        console.error("取得會議資料發生錯誤 (可能處於無後端環境):", err);
+        alert("目前處於前端預覽環境，無法取得雲端會議紀錄。");
+      }
     }
   }, [isViewer, meetingId]);
 
@@ -170,27 +188,62 @@ const App = () => {
   const generateShareLink = async () => {
     setIsGeneratingLink(true);
     try {
-      const response = await fetch('/api/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ configData: config })
-      });
+      // 模擬後端存檔：在無後端預覽環境中使用 localStorage 暫存
+      const mockId = Math.random().toString(36).substring(2, 10);
+      let isSaved = false;
       
-      if (!response.ok) {
-        throw new Error(`伺服器錯誤 (${response.status})：請確認 Vercel 是否已綁定 KV Database。`);
+      try {
+        localStorage.setItem(`meeting_${mockId}`, JSON.stringify(config));
+        isSaved = true;
+      } catch (storageErr) {
+        // 全面攔截任何 QuotaExceededError 或儲存空間不足的錯誤
+        console.warn("第一次寫入失敗，嘗試清理舊有的連結暫存...", storageErr);
+        
+        // 1. 清除本機過去產生的其他模擬會議連結暫存
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('meeting_')) {
+            localStorage.removeItem(key);
+          }
+        }
+        
+        // 2. 清除後再次嘗試儲存
+        try {
+          localStorage.setItem(`meeting_${mockId}`, JSON.stringify(config));
+          isSaved = true;
+        } catch (secondErr) {
+          console.warn("清理後依然失敗，強制移除圖片資料儲存...", secondErr);
+          // 3. 如果還是太大，自動移除圖片再產生連結
+          const lightConfig = {
+            ...config,
+            topics: config.topics.map(t => ({ ...t, images: [], previewContent: null }))
+          };
+          
+          try {
+            localStorage.setItem(`meeting_${mockId}`, JSON.stringify(lightConfig));
+            isSaved = true;
+            alert("⚠️ 專案包含的圖片過大，已超過本機環境的容量限制。系統已自動為您建立「無圖版」的分享連結！(若需完整內容請儲存 JSON 專案檔)");
+          } catch (finalErr) {
+            alert("❌ 儲存失敗：您的會議資料過大，即使移除圖片也無法儲存在預覽環境中。");
+          }
+        }
       }
       
-      const result = await response.json();
-      if (result.id) {
-        const link = `${window.location.origin}/?mode=viewer&id=${result.id}`;
-        navigator.clipboard.writeText(link);
-        alert("✅ 已產生唯讀分享連結，並自動複製到剪貼簿！");
-      } else {
-        throw new Error("無法獲取會議 ID。");
+      if (isSaved) {
+        // 組合分享連結
+        const baseUrl = window.location.href.split('?')[0];
+        const link = `${baseUrl}?mode=viewer&id=${mockId}`;
+        
+        try {
+          await navigator.clipboard.writeText(link);
+          alert(`✅ 已產生唯讀分享連結，並自動複製到剪貼簿！\n\n(註：目前為本地無後端預覽模式，此分享連結僅在您當前的瀏覽器中有效)\n\n${link}`);
+        } catch (clipErr) {
+          alert(`✅ 已產生唯讀分享連結！請手動複製以下網址：\n\n${link}\n\n(註：目前為本地預覽模式，此分享連結僅在您當前的瀏覽器中有效)`);
+        }
       }
     } catch (err) {
       console.error(err);
-      alert(`${err.message}\n\n(若您在本地端，請先發佈至 Vercel 上測試)`);
+      alert(`產生連結發生意外錯誤：${err.message}`);
     } finally {
       setIsGeneratingLink(false);
     }
@@ -335,14 +388,15 @@ const App = () => {
         const img = new Image(); img.src = event.target.result;
         img.onload = () => {
           const canvas = document.createElement("canvas");
-          const MAX_WIDTH = 3840; const MAX_HEIGHT = 3840;
+          // 降低預設解析度與品質，避免 base64 字串過大撐爆 LocalStorage
+          const MAX_WIDTH = 1920; const MAX_HEIGHT = 1920;
           let width = img.width; let height = img.height;
           if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } 
           else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
           canvas.width = width; canvas.height = height;
           const ctx = canvas.getContext("2d");
           ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 0, width, height); ctx.drawImage(img, 0, 0, width, height);
-          resolve(canvas.toDataURL("image/jpeg", 0.95));
+          resolve(canvas.toDataURL("image/jpeg", 0.85)); // 壓縮品質改為 0.85
         };
       };
     });
@@ -419,7 +473,7 @@ const App = () => {
         .custom-scrollbar-light::-webkit-scrollbar-thumb { background: rgba(15, 23, 42, 0.15); border-radius: 10px; }
         .custom-scrollbar-light::-webkit-scrollbar-thumb:hover { background: rgba(51, 143, 136, 0.6); }
 
-        /* PDF 列印專用樣式 (強制 A4 橫式) */
+        /* PDF 列印專用樣式 (強制 A4 橫式，隱藏 UI) */
         @media print {
           @page { size: A4 landscape; margin: 0; }
           html, body, #root {
@@ -433,6 +487,7 @@ const App = () => {
             padding: 0;
           }
           .no-print { display: none !important; }
+          .print\\:hidden { display: none !important; } /* 確保原本的介面在列印時隱藏 */
           .break-after-page { page-break-after: always; break-after: page; }
         }
       `}</style>
@@ -443,13 +498,41 @@ const App = () => {
         {/* Sidebar 側邊欄 */}
         <aside className={`bg-[#0A0F1C] border-r border-slate-800 flex flex-col z-40 relative transition-all duration-500 ease-in-out overflow-hidden shrink-0 ${isSidebarOpen ? "w-[320px]" : "w-[88px]"}`}>
           <div className="pt-10 pb-6 flex-1 overflow-y-auto custom-scrollbar-dark flex flex-col items-center">
-            {/* Logo 開關 */}
-            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className={`flex items-center mb-10 text-[#B89F5D] hover:text-[#FCEBAF] transition-all duration-300 cursor-pointer group outline-none ${isSidebarOpen ? 'w-full px-8 justify-start' : 'w-full justify-center'}`} title={isSidebarOpen ? "收起側欄" : "展開側欄"}>
+            
+            {/* Logo 開關 (移至時鐘上方) */}
+            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className={`flex items-center mb-8 text-[#B89F5D] hover:text-[#FCEBAF] transition-all duration-300 cursor-pointer group outline-none ${isSidebarOpen ? 'w-full px-8 justify-start' : 'w-full justify-center'}`} title={isSidebarOpen ? "收起側欄" : "展開側欄"}>
               <div className="w-5 h-5 bg-[#B89F5D] group-hover:bg-[#FCEBAF] group-hover:scale-110 rounded-sm rotate-45 shrink-0 transition-all duration-300 shadow-sm" />
               <h1 className={`font-bold tracking-[0.2em] text-[10px] uppercase whitespace-nowrap overflow-hidden transition-all duration-300 ${isSidebarOpen ? 'opacity-100 max-w-[200px] ml-3' : 'opacity-0 max-w-0 ml-0'}`}>
                 Strategic Navigator
               </h1>
             </button>
+
+            {/* 響應式時鐘區塊 (移至標誌下方，還原設計圖樣式) */}
+            {!isViewer && (
+              <div className={`mb-10 transition-all duration-500 flex items-center justify-center w-full ${isSidebarOpen ? "px-6" : "px-0"}`}>
+                <div className={`relative flex items-center justify-center rounded-[20px] bg-[#0F172A] border shadow-lg overflow-hidden transition-all duration-500 ${isSidebarOpen ? "w-full py-5 px-4 border-slate-700/60" : "w-[68px] h-12 border-slate-700/30"}`}>
+                  
+                  {/* 展開時的內容 (還原設計圖) */}
+                  <div className={`flex flex-col items-center justify-center transition-all duration-500 ${isSidebarOpen ? "opacity-100 scale-100" : "opacity-0 scale-50 absolute pointer-events-none"}`}>
+                    <span className="text-slate-500 text-[10px] font-bold tracking-[0.2em] uppercase mb-1.5">
+                      Current Time
+                    </span>
+                    <span className="text-white font-mono text-3xl tracking-widest font-bold drop-shadow-md">
+                      {currentTime.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+
+                  {/* 收合時的內容 (縮小的數位時間) */}
+                  <div className={`absolute flex items-center justify-center transition-all duration-500 ${isSidebarOpen ? "opacity-0 scale-50 pointer-events-none" : "opacity-100 scale-100"}`}>
+                    <div className="relative flex items-center justify-center">
+                      <span className="text-[#B89F5D] font-mono text-[14px] font-bold tracking-widest">
+                        {currentTime.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <nav className="w-full flex flex-col min-h-[calc(100vh-250px)]">
               <div className="px-3 space-y-2">
@@ -489,19 +572,19 @@ const App = () => {
                 </div>
               </div>
 
-              {/* 側欄左下角：方塊按鈕 (並排) */}
-              <div className={`mt-auto pt-4 pb-6 border-t border-slate-800/50 flex ${isSidebarOpen ? 'flex-row' : 'flex-col'} gap-3 px-4 w-full`}>
-                {!isViewer && (
+              {/* 側欄左下角：方塊按鈕 (並排) (僅主講者可見匯出與分享功能) */}
+              {!isViewer && (
+                <div className={`mt-auto pt-4 pb-6 border-t border-slate-800/50 flex ${isSidebarOpen ? 'flex-row' : 'flex-col'} gap-3 px-4 w-full`}>
                   <button onClick={generateShareLink} disabled={isGeneratingLink} className={`flex-1 py-3 rounded-xl border border-slate-700/50 bg-[#0F172A] text-slate-400 hover:bg-[#338F88]/10 hover:border-[#338F88]/40 hover:text-[#338F88] transition-all flex flex-col items-center justify-center gap-1.5 shadow-sm disabled:opacity-50`} title="產生唯讀分享連結">
                     <Share2 className="w-4 h-4" />
                     {isSidebarOpen && <span className="text-[11px] font-bold tracking-wider">{isGeneratingLink ? "處理中..." : "分享連結"}</span>}
                   </button>
-                )}
-                <button onClick={handlePrintPDF} className={`flex-1 py-3 rounded-xl border border-slate-700/50 bg-[#0F172A] text-slate-400 hover:bg-[#B89F5D]/10 hover:border-[#B89F5D]/40 hover:text-[#B89F5D] transition-all flex flex-col items-center justify-center gap-1.5 shadow-sm`} title="匯出 PDF 簡報">
-                  <Printer className="w-4 h-4" />
-                  {isSidebarOpen && <span className="text-[11px] font-bold tracking-wider">匯出 PDF</span>}
-                </button>
-              </div>
+                  <button onClick={handlePrintPDF} className={`flex-1 py-3 rounded-xl border border-slate-700/50 bg-[#0F172A] text-slate-400 hover:bg-[#B89F5D]/10 hover:border-[#B89F5D]/40 hover:text-[#B89F5D] transition-all flex flex-col items-center justify-center gap-1.5 shadow-sm`} title="匯出 PDF 簡報">
+                    <Printer className="w-4 h-4" />
+                    {isSidebarOpen && <span className="text-[11px] font-bold tracking-wider">匯出 PDF</span>}
+                  </button>
+                </div>
+              )}
             </nav>
           </div>
         </aside>
@@ -538,8 +621,8 @@ const App = () => {
                       <div className="flex flex-col"><span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-2">Attendees</span><span className="text-sm md:text-[15px] font-bold text-slate-200 flex items-center gap-2 truncate" title={displayConfig.attendees}><Users className="w-4 h-4 text-[#B89F5D]" /> {getAttendeePreview(displayConfig.attendees)}</span></div>
                       <div className="flex flex-col"><span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-2">Agenda</span><span className="text-sm md:text-[15px] font-bold text-[#B89F5D] flex items-center gap-2"><ClipboardList className="w-4 h-4" /> {displayConfig.topics?.length || 0} ITEMS</span></div>
                     </div>
-                    <button onClick={() => { if (displayConfig.topics?.length > 0) setActivePage("agenda"); else openConfig(); }} className="px-6 py-3.5 bg-white text-[#0A0F1C] rounded-2xl font-bold text-[15px] flex items-center gap-3 transition-all hover:bg-slate-200 shadow-xl group w-fit">
-                      {displayConfig.topics?.length > 0 ? "開始進行會議" : "設定會議內容"} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    <button onClick={() => { if (displayConfig.topics?.length > 0) setActivePage("agenda"); else if (!isViewer) openConfig(); }} className="px-6 py-3.5 bg-white text-[#0A0F1C] rounded-2xl font-bold text-[15px] flex items-center gap-3 transition-all hover:bg-slate-200 shadow-xl group w-fit">
+                      {displayConfig.topics?.length > 0 ? "開始進行會議" : isViewer ? "目前無會議議題" : "設定會議內容"} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     </button>
                   </div>
                   <div className="hidden lg:flex w-[45%] justify-center items-center pointer-events-none z-0">
@@ -685,9 +768,14 @@ const App = () => {
           )}
         </div>
 
-        {!isViewer && !isNotesOpen && activePage !== "cover" && activePage !== "agenda" && (
+        {/* 筆記按鈕 (與會者與主講者顯示不同圖示) */}
+        {!isNotesOpen && activePage !== "cover" && activePage !== "agenda" && (
           <button onClick={() => setIsNotesOpen(true)} className="fixed right-10 bottom-10 w-14 h-14 bg-[#0F172A] text-white rounded-full flex items-center justify-center shadow-[0_20px_40px_rgba(15,23,42,0.4)] z-40 hover:scale-110 hover:bg-[#1E293B] transition-all duration-300 group">
-            <Edit3 className="w-6 h-6 text-[#B89F5D] group-hover:rotate-12 transition-transform" />
+            {isViewer ? (
+               <FileText className="w-6 h-6 text-[#B89F5D] group-hover:scale-110 transition-transform" />
+            ) : (
+               <Edit3 className="w-6 h-6 text-[#B89F5D] group-hover:rotate-12 transition-transform" />
+            )}
           </button>
         )}
 
@@ -770,7 +858,7 @@ const App = () => {
       <div className="hidden print:block w-full bg-[#0A0F1C]" style={{ fontFamily: FONT_FAMILY, minHeight: 'auto' }}>
         
         {/* PDF 第一頁：封面 */}
-        <div className="print-page flex flex-col justify-center px-24 py-16 text-white relative bg-[#0A0F1C]">
+        <div className="print-page flex flex-col justify-center px-24 py-16 text-white relative bg-[#0A0F1C] h-screen break-after-page">
           <div className="absolute top-[-10%] right-[-5%] w-[60%] h-[60%] bg-gradient-to-bl from-[#338F88]/20 via-[#B89F5D]/5 to-transparent rounded-full blur-[120px] opacity-40" />
           <div className="absolute bottom-[-10%] left-[-5%] w-[50%] h-[50%] bg-[#0F172A] rounded-full blur-[120px] opacity-80" />
           
@@ -806,7 +894,7 @@ const App = () => {
 
         {/* PDF 第二頁：議程目錄 */}
         {config.topics?.length > 0 && (
-          <div className="print-page px-24 py-20 flex flex-col bg-[#F8FAFC]">
+          <div className="print-page px-24 py-20 flex flex-col bg-[#F8FAFC] h-screen break-after-page">
             <div className="flex items-center gap-4 mb-8">
               <div className="w-10 h-1 bg-[#B89F5D] rounded-full" />
               <span className="text-[#B89F5D] font-black tracking-[0.4em] text-[16px] uppercase">Meeting Agenda</span>
@@ -835,7 +923,7 @@ const App = () => {
         {config.topics?.map((t) => {
           const images = t.images?.length > 0 ? t.images : t.previewContent ? [t.previewContent] : [];
           return (
-            <div key={`print-topic-${t.id}`} className="print-page flex flex-col px-24 py-20 bg-[#F8FAFC]">
+            <div key={`print-topic-${t.id}`} className="print-page flex flex-col px-24 py-20 bg-[#F8FAFC] h-screen break-after-page">
               <div className="flex items-center justify-between mb-12">
                 <span className="px-6 py-2 rounded-full bg-white border border-slate-200 text-[16px] font-black text-slate-400 tracking-widest uppercase shadow-sm">{t.id}</span>
                 <span className={`px-6 py-2 rounded-lg text-[16px] font-bold border ${t.status === "resolved" ? "bg-[#338F88] text-white shadow-sm" : "bg-white text-slate-500 border-slate-200"}`}>{t.status === "resolved" ? "已決議" : "討論中"}</span>
@@ -851,7 +939,7 @@ const App = () => {
               <div className="flex-1 grid grid-cols-2 gap-16 overflow-hidden">
                 <div className="flex flex-col">
                   <h3 className="text-[28px] font-bold text-[#B89F5D] mb-6 flex items-center gap-3"><Edit3 className="w-6 h-6 text-[#B89F5D]" /> 決議與筆記</h3>
-                  <div className="text-[24px] leading-[2] text-slate-800 font-medium bg-white p-8 rounded-3xl border border-slate-200 shadow-sm h-full">
+                  <div className="text-[24px] leading-[2] text-slate-800 font-medium bg-white p-8 rounded-3xl border border-slate-200 shadow-sm h-full whitespace-pre-wrap">
                     {t.notes || "此議題尚無筆記。"}
                   </div>
                 </div>
