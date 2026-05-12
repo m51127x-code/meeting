@@ -363,7 +363,7 @@ const App = () => {
       }
     } catch (err) { 
       console.error(err); 
-      alert("匯出過程中發生錯誤，請重試。\n" + err.message);
+      alert("匯出過程中發生錯誤，請重試。\n" + (err?.message || String(err)));
     } finally {
       setIsExporting(false); 
     }
@@ -499,23 +499,10 @@ const App = () => {
               </div>
             </div>
 
-                <div className="w-[40%] flex flex-col justify-center items-start gap-10 relative z-10">
-                  <div className="w-full border-t border-white/10 pt-10 flex flex-col gap-8">
-                    <div className="flex flex-col gap-2">
-                      <span className="text-lg text-slate-500 font-bold uppercase tracking-[0.2em]">Topics</span>
-                      <span className="text-4xl font-black text-white">{config.topics?.length || 0} Agenda Items</span>
-                    </div>
-                    <div className="w-full h-px bg-white/10" />
-                    <div className="flex flex-col gap-4">
-                      {config.topics?.slice(0, 6).map((t, idx) => (
-                        <div key={t.id} className="flex items-center gap-4">
-                          <span className="text-2xl font-black text-white/20 font-mono w-10">{String(idx + 1).padStart(2, '0')}</span>
-                          <span className="text-2xl font-bold text-slate-300 leading-tight">{t.title}</span>
-                        </div>
-                      ))}
-                      {(config.topics?.length || 0) > 6 && (
-                        <span className="text-xl text-slate-500 font-bold pl-14">+ {config.topics.length - 6} more items</span>
-                      )}
+                <div className="w-[40%] flex flex-col justify-center items-center relative z-10">
+                  <div className="w-48 h-48 bg-gradient-to-br from-[#B89F5D]/30 to-[#338F88]/20 rounded-[40px] rotate-45 border border-white/10 flex items-center justify-center">
+                    <div className="w-32 h-32 bg-[#0A0F1C] rounded-[24px] border border-white/10 flex items-center justify-center">
+                      <div className="w-12 h-12 bg-gradient-to-tr from-[#B89F5D] to-[#FCEBAF] rounded-xl" />
                     </div>
                   </div>
                 </div>
