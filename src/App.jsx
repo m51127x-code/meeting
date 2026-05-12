@@ -224,7 +224,7 @@ const App = () => {
   };
 
   // ==========================================
-  // [全新引擎：修復 PDF 報錯與一致排版的匯出技術]
+  // [終極版引擎：解決 0px 高度崩潰與等比切分]
   // ==========================================
   const handleConfirmExport = async () => {
     setShowExportModal(false);
@@ -235,41 +235,40 @@ const App = () => {
       return;
     }
     
+    // 1. 開啟匯出狀態，讓 React 將繪製區塊真正掛載到 DOM (但藏在螢幕外)
     setIsExporting(true);
     setExportingTopicId('full-report'); 
 
-    // 自動化命名
     const rawTitle = config.cover?.title || "戰略會議報告";
     const safeTitle = rawTitle.replace(/[\/\?<>\\:\*\|":\s]/g, '_'); 
     const safeDate = config.sessionDate || "未定日期";
     const fileNameBase = `${safeTitle}_${safeDate}`;
 
+    // 2. 關鍵修復：等待 1.5 秒讓 React 完整渲染大區塊，避免 html2canvas 抓到高度 0 的 DOM
+    await new Promise((r) => setTimeout(r, 1500));
     const target = document.getElementById("full-report-export-target");
-    if (target) {
-      target.style.display = "block";
-      // 強制瀏覽器重繪 (Reflow)，避免 html2canvas 抓到隱藏狀態的 0px 高度
-      void target.offsetWidth; 
-    }
 
-    // 關鍵修復：給予充足的渲染時間，讓 DOM 依據 exportSelection 完整排列後再截圖
-    await new Promise((r) => setTimeout(r, 1200));
+    if (!target) {
+      alert("無法建立渲染畫布，請稍後再試。");
+      setIsExporting(false);
+      return;
+    }
 
     try {
       if (format === 'png') {
-        // [合併長圖模式]
         const canvas = await window.html2canvas(target, { 
           scale: 2, 
           useCORS: true, 
           backgroundColor: "#F8FAFC", 
           windowWidth: 1200 
         });
+        if(canvas.width === 0 || canvas.height === 0) throw new Error("畫面擷取為空");
         const link = document.createElement("a");
         link.download = `${fileNameBase}_合併長圖.png`;
         link.href = canvas.toDataURL("image/png", 1.0);
         link.click();
 
       } else if (format === 'zip') {
-        // [ZIP 打包模式]
         const zip = new window.JSZip();
         const folder = zip.folder(fileNameBase);
         const sections = target.querySelectorAll('[data-export-section]');
@@ -277,8 +276,9 @@ const App = () => {
         for (let i = 0; i < sections.length; i++) {
           const section = sections[i];
           const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, backgroundColor: "#F8FAFC", windowWidth: 1200 });
+          if(canvas.width === 0 || canvas.height === 0) continue;
+
           const base64Data = canvas.toDataURL("image/png", 1.0).replace(/^data:image\/(png|jpg);base64,/, "");
-          
           let fileName = "";
           const type = section.getAttribute('data-export-section');
           if (type === 'cover') fileName = `00_會議封面.png`;
@@ -298,7 +298,6 @@ const App = () => {
         link.click();
 
       } else if (format === 'pdf') {
-        // [PDF 防破圖、1:1 等寬一致字體模式]
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF('p', 'mm', 'a4'); 
         const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -313,6 +312,8 @@ const App = () => {
         for (let i = 0; i < blocks.length; i++) {
             const block = blocks[i];
             const canvas = await window.html2canvas(block, { scale: 2, useCORS: true, backgroundColor: "#F8FAFC", windowWidth: 1200 });
+            if(canvas.height === 0) continue;
+            
             const imgData = canvas.toDataURL("image/jpeg", 0.98);
             const imgHeightMm = (canvas.height * pdfWidth) / canvas.width;
 
@@ -370,9 +371,9 @@ const App = () => {
       console.error(err); 
       alert("匯出過程中發生錯誤，請重試。\n詳細原因: " + err.message);
     } finally {
+      // 3. 完成後關閉狀態並卸載繪製用 DOM
       setIsExporting(false); 
       setExportingTopicId(null); 
-      if (target) target.style.display = "none";
     }
   };
 
@@ -490,20 +491,18 @@ const App = () => {
   // ==========================================
   const renderFullReportExport = () => {
     return (
-      <div id="full-report-export-target" className="text-slate-800 bg-[#F8FAFC]" style={{ width: "1200px", fontFamily: FONT_FAMILY, position: "absolute", left: "-9999px", top: "-9999px", display: "none" }}>
+      <div id="full-report-export-target" className="text-slate-800 bg-[#F8FAFC]" style={{ width: "1200px", fontFamily: FONT_FAMILY, position: "absolute", left: "-9999px", top: 0, zIndex: -100 }}>
         
         {/* 區塊 1: 直式封面頁 - 完美還原 UI 菱形鑽石設計，固定 A4 比例高度 (1697px) */}
         {exportSelection.cover && (
-          <div data-export-section="cover" data-pdf-block="true" data-pdf-full-page="true" className="w-full bg-[#0A0F1C] border-b-[24px] border-[#B89F5D] relative overflow-hidden h-[1697px]">
+          <div data-export-section="cover" data-pdf-block="true" data-pdf-full-page="true" className="w-full bg-[#0A0F1C] border-b-[24px] border-[#B89F5D] relative overflow-hidden h-[1697px] flex flex-col justify-center">
             <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] bg-gradient-to-bl from-[#338F88]/20 via-[#B89F5D]/10 to-transparent rounded-full blur-[100px] pointer-events-none" />
             
-            <div className="w-full h-full flex flex-col justify-center px-24 relative z-10">
-              <div className="flex justify-between items-center w-full">
-                
+            <div className="w-full flex justify-between items-center relative z-10 px-20">
                 {/* 左側資訊區 */}
                 <div className="w-[55%] flex flex-col text-white">
-                  <div className="flex items-center gap-4 mb-8">
-                    <div className="w-12 h-1.5 bg-[#B89F5D] rounded-full" />
+                  <div className="flex items-center gap-5 mb-8">
+                    <div className="w-12 h-1.5 bg-[#B89F5D]" />
                     <span className="text-[#B89F5D] font-black tracking-[0.4em] text-2xl uppercase">Strategic Session</span>
                   </div>
                   <h1 className="font-bold mb-10 tracking-tight leading-[1.25] drop-shadow-lg whitespace-pre-wrap" style={{ fontSize: `${config.cover?.titleFontSize || 72}px` }}>
@@ -517,21 +516,22 @@ const App = () => {
                   </div>
                 </div>
 
-                {/* 右側設計圖案 (菱形鑽石) */}
+                {/* 右側設計圖案 (菱形鑽石完美還原) */}
                 <div className="w-[45%] flex justify-center items-center z-0 relative">
                    <div className="relative w-[500px] h-[500px] flex justify-center items-center">
-                      <div className="absolute inset-0 border border-white/5 rounded-full" />
-                      <div className="absolute inset-12 border border-[#B89F5D]/20 rounded-full" />
-                      <div className="absolute inset-24 border border-dashed border-[#338F88]/30 rounded-full" />
-                      <div className="w-72 h-72 bg-gradient-to-br from-[#B89F5D]/80 to-[#338F88]/80 rounded-[36px] rotate-45 shadow-[0_0_80px_rgba(184,159,93,0.15)] flex items-center justify-center relative overflow-hidden">
-                        <div className="absolute inset-0 bg-white/5" />
-                        <div className="w-60 h-60 bg-[#0A0F1C] rounded-[28px] flex items-center justify-center border border-white/10 shadow-inner relative overflow-hidden">
-                          <div className="w-24 h-24 bg-gradient-to-tr from-[#B89F5D] to-[#FCEBAF] rounded-2xl shadow-[0_0_40px_rgba(252,235,175,0.3)]" />
+                      {/* 背景同心圓 */}
+                      <div className="absolute w-[450px] h-[450px] border-[0.5px] border-white/10 rounded-full translate-x-[-5%] translate-y-[-5%]" />
+                      <div className="absolute w-[350px] h-[350px] border-[0.5px] border-white/20 rounded-full translate-x-[10%] translate-y-[10%]" />
+                      <div className="absolute w-[600px] h-[600px] border-[0.5px] border-white/5 rounded-full" />
+                      
+                      {/* 核心雙層鑽石設計 */}
+                      <div className="w-[320px] h-[320px] rotate-45 rounded-[3rem] p-[30px] bg-gradient-to-br from-[#B89F5D] to-[#338F88] shadow-[0_0_80px_rgba(184,159,93,0.15)] flex items-center justify-center relative overflow-hidden group">
+                        <div className="w-full h-full bg-[#0A0F1C] rounded-[2rem] flex items-center justify-center shadow-inner relative overflow-hidden">
+                          <div className="w-24 h-24 bg-[#B89F5D] rounded-2xl shadow-[0_0_40px_rgba(184,159,93,0.4)]" />
                         </div>
                       </div>
                     </div>
                 </div>
-              </div>
             </div>
           </div>
         )}
@@ -764,6 +764,7 @@ const App = () => {
           )}
 
           <div className="flex-1 w-full relative">
+            {/* UI: 首頁 (完美還原菱形鑽石設計) */}
             {activePage === "cover" && (
               <div className="min-h-screen flex flex-col justify-center px-8 md:px-16 pt-32 pb-16 text-white relative overflow-hidden">
                 <div className="absolute top-[-10%] right-[-5%] w-[60%] h-[60%] bg-gradient-to-bl from-[#338F88]/20 via-[#B89F5D]/5 to-transparent rounded-full blur-[120px] opacity-40 pointer-events-none" />
@@ -771,13 +772,13 @@ const App = () => {
                 <div className="z-10 w-full max-w-[1200px] mx-auto relative flex flex-col lg:flex-row items-center justify-between gap-12">
                   <div className="w-full lg:w-[55%] relative z-10 flex flex-col justify-center">
                     <div className="flex items-center gap-4 mb-8">
-                      <div className="w-10 h-1 bg-[#B89F5D] rounded-full" />
+                      <div className="w-10 h-1 bg-[#B89F5D]" />
                       <span className="text-[#B89F5D] font-black tracking-[0.3em] text-xs md:text-sm uppercase">Strategic Session</span>
                     </div>
-                    <h1 className="font-bold mb-8 tracking-tight leading-[1.2] drop-shadow-lg break-words whitespace-pre-wrap transition-all duration-300" style={{ fontSize: `clamp(36px, ${displayConfig.cover?.titleFontSize || 72}px, 88px)` }}>
+                    <h1 className="font-bold mb-8 tracking-tight leading-[1.25] drop-shadow-lg break-words whitespace-pre-wrap transition-all duration-300" style={{ fontSize: `clamp(36px, ${displayConfig.cover?.titleFontSize || 72}px, 88px)` }}>
                       {displayConfig.cover?.title || "未命名會議"}
                     </h1>
-                    {displayConfig.cover?.desc && <p className="text-[16px] md:text-[18px] text-slate-300 mb-12 max-w-[600px] leading-[1.8] font-medium border-l-4 border-[#338F88] pl-6">{displayConfig.cover?.desc}</p>}
+                    {displayConfig.cover?.desc && <p className="text-[16px] md:text-[18px] text-slate-300 mb-12 max-w-[600px] leading-[1.8] font-medium border-l-[5px] border-[#338F88] pl-6">{displayConfig.cover?.desc}</p>}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-12 py-8 border-y border-white/10 w-full max-w-[650px]">
                       <div className="flex flex-col"><span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-2">Meeting Date</span><span className="text-sm md:text-[15px] font-bold text-slate-200 flex items-center gap-2"><Calendar className="w-4 h-4 text-[#B89F5D]" /> {displayConfig.sessionDate || "TBD"}</span></div>
                       <div className="flex flex-col"><span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-2">Attendees</span><span className="text-sm md:text-[15px] font-bold text-slate-200 flex items-center gap-2 truncate" title={displayConfig.attendees}><Users className="w-4 h-4 text-[#B89F5D]" /> {getAttendeePreview(displayConfig.attendees)}</span></div>
@@ -787,15 +788,15 @@ const App = () => {
                       {displayConfig.topics?.length > 0 ? "開始進行會議" : isViewer ? "目前無會議議題" : "設定會議內容"} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     </button>
                   </div>
-                  <div className="hidden lg:flex w-[45%] justify-center items-center pointer-events-none z-0">
+                  <div className="hidden lg:flex w-[45%] justify-center items-center pointer-events-none z-0 relative">
                     <div className="relative w-[360px] h-[360px] xl:w-[460px] xl:h-[460px] flex justify-center items-center">
-                      <div className="absolute inset-0 border border-white/5 rounded-full animate-[spin_60s_linear_infinite]" />
-                      <div className="absolute inset-10 xl:inset-12 border border-[#B89F5D]/20 rounded-full animate-[spin_40s_linear_infinite_reverse]" />
-                      <div className="absolute inset-20 xl:inset-24 border border-dashed border-[#338F88]/30 rounded-full animate-[spin_80s_linear_infinite]" />
-                      <div className="w-48 h-48 xl:w-64 xl:h-64 bg-gradient-to-br from-[#B89F5D]/80 to-[#338F88]/80 rounded-[32px] rotate-45 shadow-[0_0_80px_rgba(184,159,93,0.15)] backdrop-blur-3xl flex items-center justify-center relative overflow-hidden group">
-                        <div className="absolute inset-0 bg-white/5 group-hover:bg-white/10 transition-colors" />
-                        <div className="w-40 h-40 xl:w-52 xl:h-52 bg-[#0A0F1C] rounded-[24px] flex items-center justify-center border border-white/10 shadow-inner relative overflow-hidden">
-                          <div className="w-16 h-16 xl:w-20 xl:h-20 bg-gradient-to-tr from-[#B89F5D] to-[#FCEBAF] rounded-xl shadow-[0_0_40px_rgba(252,235,175,0.3)] animate-pulse" />
+                      <div className="absolute w-[90%] h-[90%] border-[0.5px] border-white/10 rounded-full translate-x-[-5%] translate-y-[-5%]" />
+                      <div className="absolute w-[70%] h-[70%] border-[0.5px] border-white/20 rounded-full translate-x-[10%] translate-y-[10%]" />
+                      <div className="absolute w-[120%] h-[120%] border-[0.5px] border-white/5 rounded-full" />
+                      
+                      <div className="w-56 h-56 xl:w-72 xl:h-72 rotate-45 rounded-[2rem] xl:rounded-[3rem] p-[20px] xl:p-[28px] bg-gradient-to-br from-[#B89F5D] to-[#338F88] shadow-[0_0_80px_rgba(184,159,93,0.15)] flex items-center justify-center relative overflow-hidden group">
+                        <div className="w-full h-full bg-[#0A0F1C] rounded-[1.2rem] xl:rounded-[2rem] flex items-center justify-center shadow-inner relative overflow-hidden">
+                          <div className="w-16 h-16 xl:w-20 xl:h-20 bg-[#B89F5D] rounded-xl xl:rounded-2xl shadow-[0_0_40px_rgba(184,159,93,0.4)]" />
                         </div>
                       </div>
                     </div>
@@ -890,8 +891,8 @@ const App = () => {
               </div>
             )}
             
-            {/* 隱藏的完整報告渲染區塊 (供畫圖/PDF生成) */}
-            {renderFullReportExport()}
+            {/* [隱藏的完整報告渲染區塊] (確保有加上 isExporting 判斷才掛載到 DOM) */}
+            {isExporting && renderFullReportExport()}
           </div>
         </main>
 
