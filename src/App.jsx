@@ -528,8 +528,6 @@ const App = () => {
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
         )}
 
         {exportSelection.agenda && config.topics?.length > 0 && (
