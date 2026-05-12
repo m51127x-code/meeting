@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useRef } from "react";
+
+
+	import React, { useState, useEffect, useRef } from "react";
 import {
   Settings,
   Plus,
@@ -496,29 +498,38 @@ const App = () => {
               </div>
             </div>
 
-            <div className="w-[45%] flex justify-center items-center z-0 relative">
-               <div className="relative w-[460px] h-[460px] flex justify-center items-center">
-                 <div className="absolute inset-0 border border-white/5 rounded-full" />
-                 <div className="absolute inset-12 border border-[#B89F5D]/20 rounded-full" />
-                 <div className="absolute inset-24 border border-dashed border-[#338F88]/30 rounded-full" />
-                 
-                 <div className="absolute top-[10%] right-[-5%] bg-[#1E293B] border border-white/10 rounded-2xl px-5 py-3 shadow-2xl z-20 flex flex-col gap-1">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">System Status</span>
-                    <span className="text-sm font-bold text-[#338F88]">Synchronized</span>
-                 </div>
+                <div className="hidden lg:flex absolute right-[-10%] xl:right-0 top-1/2 -translate-y-1/2 w-[400px] xl:w-[500px] h-[400px] xl:h-[500px] justify-center items-center pointer-events-none z-0 transform scale-[0.65] xl:scale-100 origin-right opacity-80 xl:opacity-100">
+                  <div className="absolute inset-0 border border-white/5 rounded-full animate-[spin_60s_linear_infinite]" />
+                  <div className="absolute inset-10 border border-[#B89F5D]/20 rounded-full animate-[spin_40s_linear_infinite_reverse]" />
+                  <div className="absolute inset-20 border border-dashed border-[#338F88]/30 rounded-full animate-[spin_80s_linear_infinite]" />
 
-                 <div className="absolute bottom-[10%] left-[-5%] bg-[#1E293B] border border-white/10 rounded-2xl px-5 py-3 shadow-2xl z-20 flex flex-col gap-1">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Workspace</span>
-                    <span className="text-sm font-bold text-white flex items-center gap-2"><Layout className="w-4 h-4 text-[#B89F5D]" /> Board Ready</span>
-                 </div>
+                  <div className="w-64 h-64 bg-gradient-to-br from-[#B89F5D]/80 to-[#338F88]/80 rounded-[40px] rotate-45 shadow-[0_0_100px_rgba(184,159,93,0.2)] backdrop-blur-3xl flex items-center justify-center relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-white/5 group-hover:bg-white/10 transition-colors" />
+                    <div className="w-56 h-56 bg-[#0A0F1C] rounded-[32px] flex items-center justify-center border border-white/10 shadow-inner relative overflow-hidden">
+                      <div className="w-24 h-24 bg-gradient-to-tr from-[#B89F5D] to-[#FCEBAF] rounded-2xl shadow-[0_0_50px_rgba(252,235,175,0.4)] animate-pulse" />
+                    </div>
+                  </div>
 
-                 <div className="w-64 h-64 bg-gradient-to-br from-[#B89F5D]/80 to-[#338F88]/80 rounded-[32px] rotate-45 shadow-[0_0_80px_rgba(184,159,93,0.15)] backdrop-blur-3xl flex items-center justify-center relative overflow-hidden">
-                   <div className="absolute inset-0 bg-white/5" />
-                   <div className="w-52 h-52 bg-[#0A0F1C] rounded-[24px] flex items-center justify-center border border-white/10 shadow-inner relative overflow-hidden">
-                     <div className="w-20 h-20 bg-gradient-to-tr from-[#B89F5D] to-[#FCEBAF] rounded-xl shadow-[0_0_40px_rgba(252,235,175,0.3)]" />
-                   </div>
-                 </div>
-               </div>
+                  <div className="absolute top-12 right-0 bg-[#0F172A]/90 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl transform translate-x-8 hover:-translate-y-1 transition-transform">
+                    <span className="text-[10px] text-slate-400 font-bold tracking-widest uppercase block mb-1.5">
+                      System Status
+                    </span>
+                    <span className="text-sm font-bold text-[#338F88] flex items-center gap-2">
+                      <div className="w-2 h-2 bg-[#338F88] rounded-full animate-ping" />{" "}
+                      Synchronized
+                    </span>
+                  </div>
+
+                  <div className="absolute bottom-16 left-0 bg-[#0F172A]/90 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl transform -translate-x-4 hover:-translate-y-1 transition-transform">
+                    <span className="text-[10px] text-slate-400 font-bold tracking-widest uppercase block mb-1.5">
+                      Active Workspace
+                    </span>
+                    <span className="text-sm font-bold text-white flex items-center gap-2">
+                      <Layout className="w-4 h-4 text-[#B89F5D]" /> Board Ready
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}
