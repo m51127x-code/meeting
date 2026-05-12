@@ -277,7 +277,7 @@ const App = () => {
 
     try {
       if (format === 'png') {
-        const canvas = await window.html2canvas(target, { scale: 2, useCORS: true, backgroundColor: "#F8FAFC", windowWidth: 1200 });
+        const canvas = await window.html2canvas(target, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: "#F8FAFC", windowWidth: 1200, logging: false, removeContainer: true });
         if(canvas.width === 0 || canvas.height === 0) throw new Error("畫面擷取為空");
         const link = document.createElement("a");
         link.download = `${fileNameBase}_合併長圖.png`;
@@ -291,9 +291,7 @@ const App = () => {
 
         for (let i = 0; i < sections.length; i++) {
           const section = sections[i];
-          const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, backgroundColor: "#F8FAFC", windowWidth: 1200 });
-          if(canvas.width === 0 || canvas.height === 0) continue;
-
+const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: "#F8FAFC", windowWidth: 1200, logging: false, removeContainer: true, ignoreElements: (el) => el.tagName === 'IFRAME' });
           const base64Data = canvas.toDataURL("image/png", 1.0).replace(/^data:image\/(png|jpg);base64,/, "");
           const type = section.getAttribute('data-export-section');
           let fileName = type === 'cover' ? `00_會議封面.png` : type === 'agenda' ? `01_議程總覽.png` : `${String(i + 2).padStart(2, '0')}_${section.getAttribute('data-topic-title')}.png`;
@@ -326,8 +324,12 @@ const App = () => {
           const canvas = await window.html2canvas(block, {
             scale: 2,
             useCORS: true,
+            allowTaint: true,
             backgroundColor: isFullPage ? "#0A0F1C" : "#F8FAFC",
             windowWidth: 1200,
+            logging: false,
+            removeContainer: true,
+            ignoreElements: (el) => el.tagName === 'IFRAME',
           });
           if (canvas.width === 0 || canvas.height === 0) continue;
 
