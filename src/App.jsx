@@ -222,9 +222,9 @@ const App = () => {
         
         try {
           await navigator.clipboard.writeText(link);
-          alert(`✅ 已為新版本產生永久分享連結，並自動複製到剪貼簿！\n\n${link}`);
+          alert(`✅ 已為新版本產生分享連結，並自動複製到剪貼簿！\n\n${link}`);
         } catch (e) {
-          alert(`✅ 已為新版本產生永久分享連結！請手動複製以下網址：\n\n${link}`);
+          alert(`✅ 已為新版本產生分享連結！請手動複製以下網址：\n\n${link}`);
         }
       } else {
         throw new Error("伺服器未回傳會議 ID。");
@@ -308,54 +308,57 @@ const App = () => {
 
       } else if (format === 'pdf') {
         const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF('p', 'mm', 'a4'); 
+        const pdf = new jsPDF('p', 'mm', 'a4');
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = pdf.internal.pageSize.getHeight();
-        let currentY = 0;
-
-        pdf.setFillColor(248, 250, 252); 
-        pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
+        const margin = 10;
+        const usableHeight = pdfHeight - margin * 2;
 
         const blocks = target.querySelectorAll('[data-pdf-block="true"]');
         if (blocks.length === 0) throw new Error("無可用匯出的報告區塊");
-        
+
+        let isFirstPage = true;
+
         for (let i = 0; i < blocks.length; i++) {
-            const block = blocks[i];
-            const canvas = await window.html2canvas(block, { scale: 2, useCORS: true, backgroundColor: "#F8FAFC", windowWidth: 1200 });
-            if (canvas.height === 0) continue;
-            
-            const imgData = canvas.toDataURL("image/jpeg", 0.98);
-            const imgHeightMm = (canvas.height * pdfWidth) / canvas.width;
+          const block = blocks[i];
+          const isFullPage = block.getAttribute('data-pdf-full-page') === 'true';
 
-            if (block.getAttribute('data-pdf-full-page') === 'true') {
-                 if (i > 0) { pdf.addPage(); pdf.setFillColor(248, 250, 252); pdf.rect(0, 0, pdfWidth, pdfHeight, 'F'); }
-                 pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, imgHeightMm);
-                 currentY = imgHeightMm;
-                 continue;
-            }
+          const canvas = await window.html2canvas(block, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: isFullPage ? "#0A0F1C" : "#F8FAFC",
+            windowWidth: 1200,
+          });
+          if (canvas.width === 0 || canvas.height === 0) continue;
 
-            if (currentY + imgHeightMm > pdfHeight - 10 && currentY > 10) {
-                pdf.addPage();
-                pdf.setFillColor(248, 250, 252);
-                pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
-                currentY = 10; 
-            }
+          const imgData = canvas.toDataURL("image/jpeg", 0.95);
+          const imgHeightMm = (canvas.height / canvas.width) * pdfWidth;
 
-            if (imgHeightMm > pdfHeight - 20) {
-                 if (currentY > 15) { pdf.addPage(); pdf.setFillColor(248, 250, 252); pdf.rect(0, 0, pdfWidth, pdfHeight, 'F'); currentY = 10; }
-                 let hLeft = imgHeightMm;
-                 let pos = 0;
-                 while(hLeft > 0) {
-                     pdf.addImage(imgData, 'JPEG', 0, currentY + pos, pdfWidth, imgHeightMm);
-                     hLeft -= (pdfHeight - currentY - 10);
-                     if (hLeft > 0) { pdf.addPage(); pdf.setFillColor(248, 250, 252); pdf.rect(0, 0, pdfWidth, pdfHeight, 'F'); pos -= (pdfHeight - currentY - 10); currentY = 10; }
-                 }
-                 currentY = (imgHeightMm + pos) + 10;
-            } else {
-                 pdf.addImage(imgData, 'JPEG', 0, currentY, pdfWidth, imgHeightMm);
-                 currentY += imgHeightMm;
-            }
+          if (isFullPage) {
+            if (!isFirstPage) pdf.addPage();
+            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+            isFirstPage = false;
+            continue;
+          }
+
+          // 一般區塊：若高度超過一頁則單獨放一頁，否則正常接續
+          if (!isFirstPage) pdf.addPage();
+          
+          if (imgHeightMm <= usableHeight) {
+            // 置中放置
+            const yOffset = (pdfHeight - imgHeightMm) / 2;
+            pdf.setFillColor(248, 250, 252);
+            pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
+            pdf.addImage(imgData, 'JPEG', 0, yOffset > margin ? yOffset : margin, pdfWidth, imgHeightMm);
+          } else {
+            // 超長區塊：從頂部開始，允許超出（讀者可捲動）
+            pdf.setFillColor(248, 250, 252);
+            pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
+            pdf.addImage(imgData, 'JPEG', 0, margin, pdfWidth, imgHeightMm);
+          }
+          isFirstPage = false;
         }
+
         pdf.save(`${fileNameBase}.pdf`);
       }
     } catch (err) { 
@@ -496,35 +499,24 @@ const App = () => {
               </div>
             </div>
 
-                <div className="hidden lg:flex absolute right-[-10%] xl:right-0 top-1/2 -translate-y-1/2 w-[400px] xl:w-[500px] h-[400px] xl:h-[500px] justify-center items-center pointer-events-none z-0 transform scale-[0.65] xl:scale-100 origin-right opacity-80 xl:opacity-100">
-                  <div className="absolute inset-0 border border-white/5 rounded-full animate-[spin_60s_linear_infinite]" />
-                  <div className="absolute inset-10 border border-[#B89F5D]/20 rounded-full animate-[spin_40s_linear_infinite_reverse]" />
-                  <div className="absolute inset-20 border border-dashed border-[#338F88]/30 rounded-full animate-[spin_80s_linear_infinite]" />
-
-                  <div className="w-64 h-64 bg-gradient-to-br from-[#B89F5D]/80 to-[#338F88]/80 rounded-[40px] rotate-45 shadow-[0_0_100px_rgba(184,159,93,0.2)] backdrop-blur-3xl flex items-center justify-center relative overflow-hidden group">
-                    <div className="absolute inset-0 bg-white/5 group-hover:bg-white/10 transition-colors" />
-                    <div className="w-56 h-56 bg-[#0A0F1C] rounded-[32px] flex items-center justify-center border border-white/10 shadow-inner relative overflow-hidden">
-                      <div className="w-24 h-24 bg-gradient-to-tr from-[#B89F5D] to-[#FCEBAF] rounded-2xl shadow-[0_0_50px_rgba(252,235,175,0.4)] animate-pulse" />
+                <div className="w-[40%] flex flex-col justify-center items-start gap-10 relative z-10">
+                  <div className="w-full border-t border-white/10 pt-10 flex flex-col gap-8">
+                    <div className="flex flex-col gap-2">
+                      <span className="text-lg text-slate-500 font-bold uppercase tracking-[0.2em]">Topics</span>
+                      <span className="text-4xl font-black text-white">{config.topics?.length || 0} Agenda Items</span>
                     </div>
-                  </div>
-
-                  <div className="absolute top-12 right-0 bg-[#0F172A]/90 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl transform translate-x-8 hover:-translate-y-1 transition-transform">
-                    <span className="text-[10px] text-slate-400 font-bold tracking-widest uppercase block mb-1.5">
-                      System Status
-                    </span>
-                    <span className="text-sm font-bold text-[#338F88] flex items-center gap-2">
-                      <div className="w-2 h-2 bg-[#338F88] rounded-full animate-ping" />{" "}
-                      Synchronized
-                    </span>
-                  </div>
-
-                  <div className="absolute bottom-16 left-0 bg-[#0F172A]/90 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl transform -translate-x-4 hover:-translate-y-1 transition-transform">
-                    <span className="text-[10px] text-slate-400 font-bold tracking-widest uppercase block mb-1.5">
-                      Active Workspace
-                    </span>
-                    <span className="text-sm font-bold text-white flex items-center gap-2">
-                      <Layout className="w-4 h-4 text-[#B89F5D]" /> Board Ready
-                    </span>
+                    <div className="w-full h-px bg-white/10" />
+                    <div className="flex flex-col gap-4">
+                      {config.topics?.slice(0, 6).map((t, idx) => (
+                        <div key={t.id} className="flex items-center gap-4">
+                          <span className="text-2xl font-black text-white/20 font-mono w-10">{String(idx + 1).padStart(2, '0')}</span>
+                          <span className="text-2xl font-bold text-slate-300 leading-tight">{t.title}</span>
+                        </div>
+                      ))}
+                      {(config.topics?.length || 0) > 6 && (
+                        <span className="text-xl text-slate-500 font-bold pl-14">+ {config.topics.length - 6} more items</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
