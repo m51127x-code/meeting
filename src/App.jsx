@@ -25,7 +25,8 @@ import {
   Share2,
   Printer,
   Clock,
-  FileImage
+  FileImage,
+  Archive
 } from "lucide-react";
 
 const THEME = {
@@ -82,7 +83,7 @@ const App = () => {
     }
   }, [config]);
 
-  // [與會者] 載入雲端資料 (已改為支援本地預覽模擬)
+  // [與會者] 載入雲端資料
   useEffect(() => {
     if (isViewer && meetingId) {
       try {
@@ -103,7 +104,7 @@ const App = () => {
           })
           .catch(err => console.error("讀取資料失敗", err));
       } catch (err) {
-        console.error("取得會議資料發生錯誤 (可能處於無後端環境):", err);
+        console.error("取得會議資料發生錯誤", err);
         alert("目前處於前端預覽環境，無法取得雲端會議紀錄。");
       }
     }
@@ -114,8 +115,14 @@ const App = () => {
   const [isNotesOpen, setIsNotesOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [fullscreenImg, setFullscreenImg] = useState(null);
+  
+  // 匯出相關狀態
   const [isExporting, setIsExporting] = useState(false);
   const [exportingTopicId, setExportingTopicId] = useState(null);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportFormat, setExportFormat] = useState('pdf');
+  const [exportSelection, setExportSelection] = useState({ cover: true, agenda: true });
+
   const [tempConfig, setTempConfig] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -154,11 +161,12 @@ const App = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // 動態載入畫圖與 PDF 核心引擎 (棄用會崩潰的 html2pdf.js，改回原生的 jsPDF 進行智慧分頁)
+  // 動態載入畫圖與 PDF、ZIP 打包引擎
   useEffect(() => {
     const scripts = [
       "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
-      "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+      "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
+      "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"
     ];
     scripts.forEach((src) => {
       if (!document.querySelector(`script[src="${src}"]`)) {
@@ -187,17 +195,14 @@ const App = () => {
         localStorage.setItem(`meeting_${mockId}`, JSON.stringify(config));
         isSaved = true;
       } catch (storageErr) {
-        console.warn("第一次寫入失敗，嘗試清理舊有的連結暫存...", storageErr);
         for (let i = localStorage.length - 1; i >= 0; i--) {
           const key = localStorage.key(i);
           if (key && key.startsWith('meeting_')) localStorage.removeItem(key);
         }
-        
         try {
           localStorage.setItem(`meeting_${mockId}`, JSON.stringify(config));
           isSaved = true;
         } catch (secondErr) {
-          console.warn("清理後依然失敗，強制移除圖片資料儲存...", secondErr);
           const lightConfig = {
             ...config,
             topics: config.topics.map(t => ({ ...t, images: [], previewContent: null }))
@@ -230,25 +235,44 @@ const App = () => {
     }
   };
 
+  // 打開匯出選擇器
+  const openExportModal = (format) => {
+    const initialSelection = { cover: true, agenda: true };
+    config.topics?.forEach(t => initialSelection[t.id] = true);
+    setExportSelection(initialSelection);
+    setExportFormat(format);
+    setShowExportModal(true);
+  };
+
+  const toggleExportSelection = (key) => {
+    setExportSelection(prev => {
+        const newSelection = { ...prev, [key]: !prev[key] };
+        return newSelection;
+    });
+  };
+
   // ==========================================
-  // [全新智慧引擎：確保不破圖的 A4 直式 PDF & 完美長圖]
+  // [全新：防破圖 1:1 PDF & 合併長圖 & 打包ZIP 引擎]
   // ==========================================
-  const handleExportFullReport = async (format = 'pdf') => {
+  const handleConfirmExport = async () => {
+    setShowExportModal(false);
+    const format = exportFormat;
+    
     if (!window.html2canvas || (format === 'pdf' && !window.jspdf)) {
       alert("匯出模組尚未載入完成，請稍候再試。");
       return;
     }
     
     setIsExporting(true);
-    setExportingTopicId('full-report'); // UI Loading state
+    setExportingTopicId('full-report'); 
 
-    // 取得檔案名稱：首頁標題 + 日期
+    // 自動化命名：首頁標題 + 日期
     const rawTitle = config.cover?.title || "戰略會議報告";
-    const safeTitle = rawTitle.replace(/[\/\?<>\\:\*\|":\s]/g, '_'); // 過濾不合法字元
+    const safeTitle = rawTitle.replace(/[\/\?<>\\:\*\|":\s]/g, '_'); 
     const safeDate = config.sessionDate || "未定日期";
     const fileNameBase = `${safeTitle}_${safeDate}`;
 
-    // 給予渲染時間
+    // 給予渲染時間，讓 DOM 依據 exportSelection 重新排列
     await new Promise((r) => setTimeout(r, 800));
     
     const target = document.getElementById("full-report-export-target");
@@ -256,7 +280,7 @@ const App = () => {
 
     try {
       if (format === 'png') {
-        // [長圖模式] - 直接對整個大容器進行一次性截圖
+        // [單一長圖模式] - 針對篩選好的 target 進行一次性截圖 (完美接合)
         const canvas = await window.html2canvas(target, { 
           scale: 2, 
           useCORS: true, 
@@ -264,62 +288,109 @@ const App = () => {
           windowWidth: 1200 
         });
         const link = document.createElement("a");
-        link.download = `${fileNameBase}.png`;
+        link.download = `${fileNameBase}_合併長圖.png`;
         link.href = canvas.toDataURL("image/png", 1.0);
         link.click();
 
+      } else if (format === 'zip') {
+        // [打包圖檔 ZIP 模式] - 按議題 (By Topic) 截取成個別圖檔並打包
+        const zip = new window.JSZip();
+        const folder = zip.folder(fileNameBase);
+        const sections = target.querySelectorAll('[data-export-section]');
+
+        for (let i = 0; i < sections.length; i++) {
+          const section = sections[i];
+          const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, backgroundColor: "#F8FAFC", windowWidth: 1200 });
+          const base64Data = canvas.toDataURL("image/png", 1.0).replace(/^data:image\/(png|jpg);base64,/, "");
+          
+          let fileName = "";
+          const type = section.getAttribute('data-export-section');
+          if (type === 'cover') fileName = `00_會議封面.png`;
+          else if (type === 'agenda') fileName = `01_議程總覽.png`;
+          else {
+            const tTitle = section.getAttribute('data-topic-title') || `議題`;
+            const safeTTitle = tTitle.replace(/[\/\?<>\\:\*\|":\s]/g, '_');
+            fileName = `${String(i).padStart(2, '0')}_${safeTTitle}.png`;
+          }
+          folder.file(fileName, base64Data, { base64: true });
+        }
+
+        const zipBlob = await zip.generateAsync({ type: "blob" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(zipBlob);
+        link.download = `${fileNameBase}_各議題獨立圖檔.zip`;
+        link.click();
+
       } else if (format === 'pdf') {
-        // [PDF 防破圖智慧分頁模式]
+        // [PDF 統一比例防破圖模式] 
+        // 完全捨棄縮放機制，保證每個區塊的字體大小、寬度 100% 一致！
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF('p', 'mm', 'a4'); // A4 直式
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = pdf.internal.pageSize.getHeight();
-        
-        // 抓取所有加上了 data-pdf-block 屬性的智慧獨立區塊
-        const blocks = target.querySelectorAll('[data-pdf-block="true"]');
         let currentY = 0;
 
+        // 為首頁鋪上背景色
+        pdf.setFillColor(248, 250, 252); 
+        pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
+
+        // 直接抓取所有切好的等寬防破圖區塊
+        const blocks = target.querySelectorAll('[data-pdf-block="true"]');
+        
         for (let i = 0; i < blocks.length; i++) {
-          const block = blocks[i];
-          const canvas = await window.html2canvas(block, { scale: 2, useCORS: true, backgroundColor: "#F8FAFC" });
-          const imgData = canvas.toDataURL("image/jpeg", 0.98);
-          // 依照 A4 寬度等比縮放高度
-          const imgHeightMm = (canvas.height * pdfWidth) / canvas.width;
+            const block = blocks[i];
 
-          // 1. 如果這個區塊標記為「滿版頁」(例如封面)，直接獨立一頁
-          if (block.getAttribute('data-pdf-full-page') === 'true') {
-             if (i > 0) pdf.addPage();
-             pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, imgHeightMm);
-             currentY = imgHeightMm;
-             continue;
-          }
+            // 每個區塊都是用 1200px 寬度擷取，確保縮放比例全球統一
+            const canvas = await window.html2canvas(block, { scale: 2, useCORS: true, backgroundColor: "#F8FAFC", windowWidth: 1200 });
+            const imgData = canvas.toDataURL("image/jpeg", 0.98);
+            const imgHeightMm = (canvas.height * pdfWidth) / canvas.width;
 
-          // 2. 智慧換頁邏輯：如果把這個區塊放進去會超出 A4 高度，且目前頁面已經有東西了，就直接換到下一頁！(絕對不從中間切斷)
-          if (currentY + imgHeightMm > pdfHeight && currentY > 5) {
-            pdf.addPage();
-            currentY = 0;
-          }
-
-          // 3. 極端情況處理：如果單一區塊本身的高度就大於整張 A4 (例如超長的筆記)
-          if (imgHeightMm > pdfHeight) {
-            if (currentY > 0) { pdf.addPage(); currentY = 0; }
-            let heightLeft = imgHeightMm;
-            let position = 0;
-            // 進行垂直切片
-            while (heightLeft > 0) {
-              pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeightMm);
-              heightLeft -= pdfHeight;
-              if (heightLeft > 0) {
-                 pdf.addPage();
-                 position -= pdfHeight;
-              }
+            // 1. 封面：強制獨立滿版一頁
+            if (block.getAttribute('data-pdf-full-page') === 'true') {
+                 if (i > 0) {
+                     pdf.addPage();
+                     pdf.setFillColor(248, 250, 252);
+                     pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
+                 }
+                 pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, imgHeightMm);
+                 currentY = imgHeightMm;
+                 continue;
             }
-            currentY = (imgHeightMm % pdfHeight);
-          } else {
-            // 正常貼上這個不破圖的區塊
-            pdf.addImage(imgData, 'JPEG', 0, currentY, pdfWidth, imgHeightMm);
-            currentY += imgHeightMm;
-          }
+
+            // 2. 換頁判定：如果放入此區塊會超過底部，且頁面上已有內容，就直接翻到下一頁
+            if (currentY + imgHeightMm > pdfHeight && currentY > 5) {
+                pdf.addPage();
+                pdf.setFillColor(248, 250, 252);
+                pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
+                currentY = 0;
+            }
+
+            // 3. 極端情況：單一區塊(例如超長的文字筆記或超高圖檔)比一整張A4還高，才進行安全切割
+            if (imgHeightMm > pdfHeight) {
+                 if (currentY > 5) { 
+                     pdf.addPage(); 
+                     pdf.setFillColor(248, 250, 252);
+                     pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
+                     currentY = 0; 
+                 }
+                 let hLeft = imgHeightMm;
+                 let pos = 0;
+                 while(hLeft > 0) {
+                     pdf.addImage(imgData, 'JPEG', 0, pos, pdfWidth, imgHeightMm);
+                     hLeft -= pdfHeight;
+                     if (hLeft > 0) { 
+                         pdf.addPage(); 
+                         pdf.setFillColor(248, 250, 252);
+                         pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
+                         pos -= pdfHeight; 
+                     }
+                 }
+                 currentY = (imgHeightMm % pdfHeight);
+            } else {
+                 // 完美放上頁面
+                 pdf.addImage(imgData, 'JPEG', 0, currentY, pdfWidth, imgHeightMm);
+                 currentY += imgHeightMm;
+            }
         }
 
         // 儲存套用最新檔名的 PDF
@@ -340,7 +411,7 @@ const App = () => {
     const dataUri = "data:application/json;charset=utf-8," + encodeURIComponent(dataStr);
     const linkElement = document.createElement("a");
     linkElement.setAttribute("href", dataUri);
-    // 專案檔名也同步更新為：首頁標題 + 日期
+    // 專案檔名同步更新為：首頁標題 + 日期
     const rawTitle = config.cover?.title || "戰略會議專案";
     const safeTitle = rawTitle.replace(/[\/\?<>\\:\*\|":\s]/g, '_');
     const safeDate = config.sessionDate || "未定日期";
@@ -426,29 +497,33 @@ const App = () => {
   const currentTopicImages = currentTopic?.images?.length > 0 ? currentTopic.images : currentTopic?.previewContent ? [currentTopic.previewContent] : [];
   const displayConfig = isConfigOpen && tempConfig ? tempConfig : config;
 
+  // 篩選後已勾選的議題
+  const selectedTopicsList = config.topics?.filter(t => exportSelection[t.id]) || [];
+
   // ==========================================
-  // [全新：智慧防破圖 DOM 結構區塊]
-  // 每個帶有 data-pdf-block="true" 的 div，都會被 PDF 引擎獨立計算，絕不中斷切割！
+  // [全新結構：保證等寬 (w-full) 的防破圖渲染區塊]
   // ==========================================
   const renderFullReportExport = () => {
     return (
-      <div id="full-report-export-target" className="text-slate-800" style={{ width: "1200px", fontFamily: FONT_FAMILY, position: "absolute", left: "-9999px", top: "-9999px", display: "none", backgroundColor: "#F8FAFC" }}>
+      <div id="full-report-export-target" className="text-slate-800 bg-[#F8FAFC]" style={{ width: "1200px", fontFamily: FONT_FAMILY, position: "absolute", left: "-9999px", top: "-9999px", display: "none" }}>
         
-        {/* 區塊 1: 直式封面頁 - 固定 A4 比例高度，完美填滿第一頁 */}
-        <div data-pdf-block="true" data-pdf-full-page="true" className="w-full flex flex-col justify-center items-center text-center px-20 bg-white border-b-[16px] border-[#B89F5D] relative overflow-hidden h-[1697px]">
-          <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-gradient-to-bl from-[#338F88]/10 via-[#B89F5D]/5 to-transparent rounded-full blur-[80px] pointer-events-none" />
-          <div className="text-[#B89F5D] tracking-[0.4em] text-2xl font-black mb-8 uppercase relative z-10">Strategic Session Report</div>
-          <h1 className="text-7xl leading-tight font-black text-slate-900 mb-12 relative z-10 max-w-[1000px] whitespace-pre-wrap">{config.cover?.title || "未命名戰略會議"}</h1>
-          {config.cover?.desc && <p className="text-3xl text-slate-600 mb-20 max-w-[800px] leading-relaxed relative z-10">{config.cover?.desc}</p>}
-          <div className="flex justify-center gap-16 text-2xl text-slate-500 font-bold border-t-2 border-slate-100 pt-16 mt-10 w-full max-w-[800px] relative z-10">
-            <div className="flex flex-col items-center"><span className="text-lg text-slate-400 uppercase tracking-widest mb-3">Meeting Date</span><span className="text-[#338F88] flex items-center gap-2">{config.sessionDate || "TBD"}</span></div>
-            <div className="flex flex-col items-center"><span className="text-lg text-slate-400 uppercase tracking-widest mb-3">Attendees</span><span className="text-[#338F88] flex items-center gap-2">{getAttendeePreview(config.attendees)}</span></div>
+        {/* 區塊 1: 直式封面頁 */}
+        {exportSelection.cover && (
+          <div data-export-section="cover" data-pdf-block="true" data-pdf-full-page="true" className="w-full flex flex-col justify-center items-center text-center px-20 bg-white border-b-[16px] border-[#B89F5D] relative overflow-hidden h-[1697px]">
+            <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-gradient-to-bl from-[#338F88]/10 via-[#B89F5D]/5 to-transparent rounded-full blur-[80px] pointer-events-none" />
+            <div className="text-[#B89F5D] tracking-[0.4em] text-2xl font-black mb-8 uppercase relative z-10">Strategic Session Report</div>
+            <h1 className="text-7xl leading-tight font-black text-slate-900 mb-12 relative z-10 max-w-[1000px] whitespace-pre-wrap">{config.cover?.title || "未命名戰略會議"}</h1>
+            {config.cover?.desc && <p className="text-3xl text-slate-600 mb-20 max-w-[800px] leading-relaxed relative z-10">{config.cover?.desc}</p>}
+            <div className="flex justify-center gap-16 text-2xl text-slate-500 font-bold border-t-2 border-slate-100 pt-16 mt-10 w-full max-w-[800px] relative z-10">
+              <div className="flex flex-col items-center"><span className="text-lg text-slate-400 uppercase tracking-widest mb-3">Meeting Date</span><span className="text-[#338F88] flex items-center gap-2">{config.sessionDate || "TBD"}</span></div>
+              <div className="flex flex-col items-center"><span className="text-lg text-slate-400 uppercase tracking-widest mb-3">Attendees</span><span className="text-[#338F88] flex items-center gap-2">{getAttendeePreview(config.attendees)}</span></div>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* 區塊 2: 直式議程總覽 */}
-        {config.topics?.length > 0 && (
-          <div data-pdf-block="true" className="w-full px-20 pt-20 pb-10 bg-[#F8FAFC]">
+        {exportSelection.agenda && config.topics?.length > 0 && (
+          <div data-export-section="agenda" data-pdf-block="true" className={`w-full px-20 ${exportSelection.cover ? 'pt-20' : 'pt-0'} pb-10 bg-[#F8FAFC]`}>
             <div className="bg-white p-16 rounded-[40px] shadow-sm border border-slate-200">
               <h2 className="text-5xl font-black text-slate-900 mb-16 pb-8 border-b-4 border-slate-100 flex items-center gap-6">
                 <div className="w-4 h-12 bg-[#B89F5D] rounded-full"></div> 議程總覽
@@ -472,14 +547,19 @@ const App = () => {
           </div>
         )}
 
-        {/* 動態區塊: 將所有議題拆分為無數個小區塊，徹底根除破圖 */}
-        {config.topics?.map((t, index) => {
+        {/* 區塊 3: 獨立的各個勾選議題 */}
+        {selectedTopicsList.map((t, index) => {
           const images = t.images?.length > 0 ? t.images : t.previewContent ? [t.previewContent] : [];
+          // 如果沒有選首頁和目錄，第一個議題就不要加頂部 padding
+          const isFirstItem = index === 0 && !exportSelection.cover && !exportSelection.agenda;
+          
           return (
-            <React.Fragment key={`topic-${t.id}`}>
+            <div data-export-section="topic" data-topic-title={t.title} key={`topic-${t.id}`}>
               
-              {/* 子區塊 A: 議題標題與描述 */}
-              <div data-pdf-block="true" className={`w-full px-20 pb-10 ${index === 0 && !config.topics.length ? 'pt-20' : 'pt-10'} bg-[#F8FAFC]`}>
+              {/* 將每個議題的內容徹底拆分成等寬 (w-full) 的 data-pdf-block，確保 PDF 不改變寬度 */}
+              
+              {/* 內部防破圖 A: 標題與描述 */}
+              <div data-pdf-block="true" className={`w-full px-20 pb-8 ${isFirstItem ? 'pt-0' : 'pt-10'} bg-[#F8FAFC]`}>
                 <div className="bg-white px-16 py-14 rounded-[40px] shadow-sm border border-slate-200 flex flex-col gap-12">
                   <div className="flex items-center gap-4 mb-8">
                     <span className="text-xl font-black tracking-widest uppercase text-slate-400 bg-slate-100 px-6 py-2 rounded-full">{t.id}</span>
@@ -498,9 +578,9 @@ const App = () => {
                 </div>
               </div>
 
-              {/* 子區塊 B: 會議筆記區 */}
+              {/* 內部防破圖 B: 筆記區 */}
               {t.notes && (
-                <div data-pdf-block="true" className="w-full px-20 pb-10 bg-[#F8FAFC]">
+                <div data-pdf-block="true" className="w-full px-20 pb-8 bg-[#F8FAFC]">
                   <div className="bg-[#0F172A] rounded-[32px] p-12">
                     <h3 className="text-xl font-bold text-[#B89F5D] mb-6 flex items-center gap-3 uppercase tracking-widest"><Edit3 className="w-6 h-6" /> Live Resolution Note</h3>
                     <div className="text-2xl text-slate-100 leading-loose font-medium whitespace-pre-wrap">{t.notes}</div>
@@ -508,23 +588,23 @@ const App = () => {
                 </div>
               )}
 
-              {/* 子區塊 C: 圖片區域標題 */}
+              {/* 內部防破圖 C: 圖片區 */}
               {images.length > 0 && (
-                <div data-pdf-block="true" className="w-full px-20 pb-6 pt-4 bg-[#F8FAFC]">
-                  <h3 className="text-xl font-bold text-slate-400 flex items-center gap-3 uppercase tracking-widest"><ImageIcon className="w-6 h-6" /> Visual Assets</h3>
+                <div data-pdf-block="true" className="w-full px-20 pb-4 bg-[#F8FAFC]">
+                  <h3 className="text-xl font-bold text-slate-400 flex items-center gap-3 uppercase tracking-widest pl-4"><ImageIcon className="w-6 h-6" /> Visual Assets</h3>
                 </div>
               )}
-              
-              {/* 子區塊 D: 每一張圖片都強制獨立為一個區塊，保證不被腰斬！ */}
               {images.map((img, imgIdx) => (
-                <div data-pdf-block="true" key={`img-${t.id}-${imgIdx}`} className="w-full px-20 pb-10 bg-[#F8FAFC]">
-                  <div className="bg-slate-50 rounded-[32px] p-8 shadow-sm flex flex-col items-center border border-slate-200">
+                <div data-pdf-block="true" key={`img-${t.id}-${imgIdx}`} className="w-full px-20 pb-8 bg-[#F8FAFC]">
+                  <div className="bg-white rounded-[32px] p-8 shadow-sm flex flex-col items-center border border-slate-200">
                     <img src={img} className="max-w-full rounded-2xl" style={{ maxHeight: "1100px" }} alt={`img-${imgIdx}`} />
                   </div>
                 </div>
               ))}
 
-            </React.Fragment>
+              {/* 區塊間距 */}
+              <div data-pdf-block="true" className="w-full h-8 bg-[#F8FAFC]"></div>
+            </div>
           );
         })}
       </div>
@@ -542,7 +622,7 @@ const App = () => {
         .custom-scrollbar-light::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar-light::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar-light::-webkit-scrollbar-thumb { background: rgba(15, 23, 42, 0.15); border-radius: 10px; }
-        .custom-scrollbar-light::-webkit-scrollbar-thumb:hover { background: rgba(51, 143, 136, 0.6); }
+        .custom-scrollbar-light::-webkit-scrollbar-thumb:hover { rgba(51, 143, 136, 0.6); }
       `}</style>
 
       {/* 網頁實際操作介面 */}
@@ -565,7 +645,6 @@ const App = () => {
               <div className={`mb-10 transition-all duration-500 flex items-center justify-center w-full ${isSidebarOpen ? "px-6" : "px-0"}`}>
                 <div className={`relative flex items-center justify-center rounded-[20px] bg-[#0F172A] border shadow-lg overflow-hidden transition-all duration-500 ${isSidebarOpen ? "w-full py-5 px-4 border-slate-700/60" : "w-[68px] h-12 border-slate-700/30"}`}>
                   
-                  {/* 展開時的內容 */}
                   <div className={`flex flex-col items-center justify-center transition-all duration-500 ${isSidebarOpen ? "opacity-100 scale-100" : "opacity-0 scale-50 absolute pointer-events-none"}`}>
                     <span className="text-slate-500 text-[10px] font-bold tracking-[0.2em] uppercase mb-1.5">
                       Current Time
@@ -575,7 +654,6 @@ const App = () => {
                     </span>
                   </div>
 
-                  {/* 收合時的內容 */}
                   <div className={`absolute flex items-center justify-center transition-all duration-500 ${isSidebarOpen ? "opacity-0 scale-50 pointer-events-none" : "opacity-100 scale-100"}`}>
                     <div className="relative flex items-center justify-center">
                       <span className="text-[#B89F5D] font-mono text-[14px] font-bold tracking-widest">
@@ -625,7 +703,7 @@ const App = () => {
                 </div>
               </div>
 
-              {/* 側欄左下角：分享與匯出面板 (雙按鈕並排結構優化) */}
+              {/* 側欄左下角：匯出面板 */}
               {!isViewer && (
                 <div className={`mt-auto pt-4 pb-6 border-t border-slate-800/50 flex flex-col gap-2 px-4 w-full`}>
                   <button onClick={generateShareLink} disabled={isGeneratingLink} className={`w-full py-3 rounded-xl border border-slate-700/50 bg-[#0F172A] text-slate-400 hover:bg-[#338F88]/10 hover:border-[#338F88]/40 hover:text-[#338F88] transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50`} title="產生唯讀分享連結">
@@ -633,13 +711,13 @@ const App = () => {
                     {isSidebarOpen && <span className="text-[12px] font-bold tracking-wider">{isGeneratingLink ? "處理中..." : "分享連結"}</span>}
                   </button>
                   <div className={`flex ${isSidebarOpen ? 'flex-row' : 'flex-col'} gap-2 w-full`}>
-                    <button onClick={() => handleExportFullReport('pdf')} disabled={isExporting} className={`flex-1 py-3 rounded-xl border border-slate-700/50 bg-[#0F172A] text-slate-400 hover:bg-[#B89F5D]/10 hover:border-[#B89F5D]/40 hover:text-[#B89F5D] transition-all flex flex-col items-center justify-center gap-1.5 shadow-sm disabled:opacity-50`} title="匯出A4直式完美PDF (防破圖)">
-                      <FileDown className={`w-4 h-4 ${isExporting && exportingTopicId === 'full-report' ? 'animate-bounce text-[#B89F5D]' : ''}`} />
+                    <button onClick={() => openExportModal('pdf')} disabled={isExporting} className={`flex-1 py-3 rounded-xl border border-slate-700/50 bg-[#0F172A] text-slate-400 hover:bg-[#B89F5D]/10 hover:border-[#B89F5D]/40 hover:text-[#B89F5D] transition-all flex flex-col items-center justify-center gap-1.5 shadow-sm disabled:opacity-50`} title="匯出 1:1 等比例 PDF">
+                      <FileDown className={`w-4 h-4 ${isExporting && exportFormat === 'pdf' ? 'animate-bounce text-[#B89F5D]' : ''}`} />
                       {isSidebarOpen && <span className="text-[11px] font-bold tracking-wider">匯出 PDF</span>}
                     </button>
-                    <button onClick={() => handleExportFullReport('png')} disabled={isExporting} className={`flex-1 py-3 rounded-xl border border-slate-700/50 bg-[#0F172A] text-slate-400 hover:bg-slate-700/50 hover:text-white transition-all flex flex-col items-center justify-center gap-1.5 shadow-sm disabled:opacity-50`} title="匯出完整垂直長圖">
-                      <FileImage className={`w-4 h-4 ${isExporting && exportingTopicId === 'full-report' ? 'animate-pulse text-white' : ''}`} />
-                      {isSidebarOpen && <span className="text-[11px] font-bold tracking-wider">匯出長圖</span>}
+                    <button onClick={() => openExportModal('png')} disabled={isExporting} className={`flex-1 py-3 rounded-xl border border-slate-700/50 bg-[#0F172A] text-slate-400 hover:bg-slate-700/50 hover:text-white transition-all flex flex-col items-center justify-center gap-1.5 shadow-sm disabled:opacity-50`} title="選擇內容並合併成單一長圖">
+                      <ImageIcon className={`w-4 h-4 ${isExporting && exportFormat === 'png' ? 'animate-pulse text-white' : ''}`} />
+                      {isSidebarOpen && <span className="text-[11px] font-bold tracking-wider">合併長圖</span>}
                     </button>
                   </div>
                 </div>
@@ -787,10 +865,64 @@ const App = () => {
               </div>
             )}
             
-            {/* 隱藏的完整報告渲染區塊 */}
+            {/* 隱藏的完整報告渲染區塊 (供畫圖/PDF生成) */}
             {renderFullReportExport()}
           </div>
         </main>
+
+        {/* 匯出選擇器 (Export Modal) */}
+        {showExportModal && (
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[1000] flex items-center justify-center p-6 animate-in fade-in duration-200">
+            <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-[500px] overflow-hidden flex flex-col">
+              <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <div>
+                  <h3 className="text-[20px] font-black text-slate-800 tracking-tight">選擇匯出內容</h3>
+                  <p className="text-slate-500 text-[13px] mt-1 font-medium">請勾選要合併匯出為 {exportFormat === 'pdf' ? 'PDF' : exportFormat === 'png' ? '長圖' : 'ZIP 打包'} 的區塊</p>
+                </div>
+                <button onClick={() => setShowExportModal(false)} className="w-8 h-8 flex items-center justify-center bg-white rounded-full text-slate-400 hover:text-slate-700 hover:shadow-sm border border-slate-200 transition-all">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              
+              <div className="p-8 overflow-y-auto max-h-[50vh] space-y-3 custom-scrollbar-light">
+                <label className="flex items-center gap-4 cursor-pointer group p-3 rounded-2xl hover:bg-slate-50 transition-colors" onClick={() => toggleExportSelection('cover')}>
+                  <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${exportSelection.cover ? 'bg-[#338F88] border-[#338F88] shadow-[0_2px_8px_rgba(51,143,136,0.3)]' : 'bg-white border-slate-300 group-hover:border-[#338F88]'}`}>
+                    {exportSelection.cover && <Check className="w-4 h-4 text-white" strokeWidth={3} />}
+                  </div>
+                  <span className="font-bold text-[16px] text-slate-700 pointer-events-none">會議首頁 (Cover)</span>
+                </label>
+                
+                <label className="flex items-center gap-4 cursor-pointer group p-3 rounded-2xl hover:bg-slate-50 transition-colors" onClick={() => toggleExportSelection('agenda')}>
+                  <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${exportSelection.agenda ? 'bg-[#338F88] border-[#338F88] shadow-[0_2px_8px_rgba(51,143,136,0.3)]' : 'bg-white border-slate-300 group-hover:border-[#338F88]'}`}>
+                    {exportSelection.agenda && <Check className="w-4 h-4 text-white" strokeWidth={3} />}
+                  </div>
+                  <span className="font-bold text-[16px] text-slate-700 pointer-events-none">議程目錄 (Agenda)</span>
+                </label>
+                
+                {config.topics?.length > 0 && <div className="h-px bg-slate-200/60 my-4 mx-2"></div>}
+                
+                {config.topics?.map((t) => (
+                  <label key={t.id} onClick={() => toggleExportSelection(t.id)} className="flex items-center gap-4 cursor-pointer group p-3 rounded-2xl hover:bg-slate-50 transition-colors">
+                    <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all shrink-0 ${exportSelection[t.id] ? 'bg-[#338F88] border-[#338F88] shadow-[0_2px_8px_rgba(51,143,136,0.3)]' : 'bg-white border-slate-300 group-hover:border-[#338F88]'}`}>
+                      {exportSelection[t.id] && <Check className="w-4 h-4 text-white" strokeWidth={3} />}
+                    </div>
+                    <div className="flex flex-col overflow-hidden pointer-events-none">
+                      <span className="font-bold text-[13px] text-[#B89F5D] tracking-wider mb-0.5">{t.id}</span>
+                      <span className="font-bold text-[16px] text-slate-700 truncate block w-full">{t.title}</span>
+                    </div>
+                  </label>
+                ))}
+              </div>
+              
+              <div className="p-8 bg-white border-t border-slate-100 flex gap-4 shadow-[0_-10px_30px_rgba(0,0,0,0.02)] relative z-10">
+                <button onClick={() => setShowExportModal(false)} className="flex-[0.8] py-3.5 rounded-[16px] font-bold text-[15px] text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">取消</button>
+                <button onClick={() => handleConfirmExport()} className="flex-[1.2] py-3.5 rounded-[16px] font-bold text-[15px] text-white bg-[#0F172A] hover:bg-[#1E293B] shadow-[0_10px_20px_rgba(15,23,42,0.2)] hover:shadow-[0_15px_25px_rgba(15,23,42,0.3)] hover:-translate-y-0.5 transition-all">
+                  確認匯出 {exportFormat === 'pdf' ? 'PDF' : exportFormat === 'png' ? '長圖' : 'ZIP'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 筆記與控制台等 UI 元件 */}
         <div className={`fixed inset-0 bg-slate-900/20 backdrop-blur-[4px] z-[90] transition-all duration-500 ${isNotesOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`} onClick={() => setIsNotesOpen(false)} />
