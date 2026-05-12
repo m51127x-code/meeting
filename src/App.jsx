@@ -86,27 +86,19 @@ const App = () => {
   // [與會者] 載入雲端資料
   useEffect(() => {
     if (isViewer && meetingId) {
-      try {
-        const localData = localStorage.getItem(`meeting_${meetingId}`);
-        if (localData) {
-          setConfig(JSON.parse(localData));
-          return;
-        }
-
-        fetch(`/api/get?id=${meetingId}`)
-          .then(res => res.json())
-          .then(data => {
-            if (data && !data.error) {
-              setConfig(data);
-            } else {
-              alert("此會議紀錄不存在或已失效。");
-            }
-          })
-          .catch(err => console.error("讀取資料失敗", err));
-      } catch (err) {
-        console.error("取得會議資料發生錯誤", err);
-        alert("目前處於前端預覽環境，無法取得雲端會議紀錄。");
-      }
+      fetch(`/api/get?id=${meetingId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && !data.error) {
+            setConfig(data);
+          } else {
+            alert("此會議紀錄不存在或已失效。");
+          }
+        })
+        .catch(err => {
+          console.error("讀取資料失敗", err);
+          alert("無法取得雲端會議紀錄，請確認連結是否正確或伺服器狀態。");
+        });
     }
   }, [isViewer, meetingId]);
 
@@ -185,51 +177,35 @@ const App = () => {
     setIsConfigOpen(false);
   };
 
+  // [修改回真實雲端架構] 讓連結可以在其他電腦開啟
   const generateShareLink = async () => {
     setIsGeneratingLink(true);
     try {
-      const mockId = Math.random().toString(36).substring(2, 10);
-      let isSaved = false;
-      
-      try {
-        localStorage.setItem(`meeting_${mockId}`, JSON.stringify(config));
-        isSaved = true;
-      } catch (storageErr) {
-        for (let i = localStorage.length - 1; i >= 0; i--) {
-          const key = localStorage.key(i);
-          if (key && key.startsWith('meeting_')) localStorage.removeItem(key);
-        }
-        try {
-          localStorage.setItem(`meeting_${mockId}`, JSON.stringify(config));
-          isSaved = true;
-        } catch (secondErr) {
-          const lightConfig = {
-            ...config,
-            topics: config.topics.map(t => ({ ...t, images: [], previewContent: null }))
-          };
-          try {
-            localStorage.setItem(`meeting_${mockId}`, JSON.stringify(lightConfig));
-            isSaved = true;
-            alert("⚠️ 專案包含的圖片過大，已超過本機環境的容量限制。系統已自動為您建立「無圖版」的分享連結！(若需完整內容請儲存 JSON 專案檔)");
-          } catch (finalErr) {
-            alert("❌ 儲存失敗：您的會議資料過大，即使移除圖片也無法儲存在預覽環境中。");
-          }
-        }
+      const response = await fetch('/api/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ configData: config })
+      });
+
+      if (!response.ok) {
+        throw new Error(`伺服器錯誤 (${response.status})：請確認 Vercel 是否已正確綁定 KV Database。`);
       }
-      
-      if (isSaved) {
-        const baseUrl = window.location.href.split('?')[0];
-        const link = `${baseUrl}?mode=viewer&id=${mockId}`;
+
+      const result = await response.json();
+      if (result.id) {
+        const link = `${window.location.origin}/?mode=viewer&id=${result.id}`;
         try {
           await navigator.clipboard.writeText(link);
           alert(`✅ 已產生唯讀分享連結，並自動複製到剪貼簿！\n\n${link}`);
-        } catch (clipErr) {
+        } catch (e) {
           alert(`✅ 已產生唯讀分享連結！請手動複製以下網址：\n\n${link}`);
         }
+      } else {
+        throw new Error("無法獲取會議 ID。");
       }
     } catch (err) {
       console.error(err);
-      alert(`產生連結發生意外錯誤：${err.message}`);
+      alert(`產生連結失敗：\n${err.message}\n\n(提示：若您在本地端預覽，需部署至具備資料庫的正式環境以啟用雲端分享功能)`);
     } finally {
       setIsGeneratingLink(false);
     }
@@ -248,7 +224,7 @@ const App = () => {
   };
 
   // ==========================================
-  // [全新引擎：完全不縮小、樂高式防破圖的匯出技術]
+  // [全新引擎：修復 PDF 報錯與一致排版的匯出技術]
   // ==========================================
   const handleConfirmExport = async () => {
     setShowExportModal(false);
@@ -268,11 +244,15 @@ const App = () => {
     const safeDate = config.sessionDate || "未定日期";
     const fileNameBase = `${safeTitle}_${safeDate}`;
 
-    // 給予渲染時間，讓 DOM 依據 exportSelection 排列
-    await new Promise((r) => setTimeout(r, 800));
-    
     const target = document.getElementById("full-report-export-target");
-    if (target) target.style.display = "block";
+    if (target) {
+      target.style.display = "block";
+      // 強制瀏覽器重繪 (Reflow)，避免 html2canvas 抓到隱藏狀態的 0px 高度
+      void target.offsetWidth; 
+    }
+
+    // 關鍵修復：給予充足的渲染時間，讓 DOM 依據 exportSelection 完整排列後再截圖
+    await new Promise((r) => setTimeout(r, 1200));
 
     try {
       if (format === 'png') {
@@ -281,7 +261,7 @@ const App = () => {
           scale: 2, 
           useCORS: true, 
           backgroundColor: "#F8FAFC", 
-          windowWidth: 1000 
+          windowWidth: 1200 
         });
         const link = document.createElement("a");
         link.download = `${fileNameBase}_合併長圖.png`;
@@ -296,7 +276,7 @@ const App = () => {
 
         for (let i = 0; i < sections.length; i++) {
           const section = sections[i];
-          const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, backgroundColor: "#F8FAFC", windowWidth: 1000 });
+          const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, backgroundColor: "#F8FAFC", windowWidth: 1200 });
           const base64Data = canvas.toDataURL("image/png", 1.0).replace(/^data:image\/(png|jpg);base64,/, "");
           
           let fileName = "";
@@ -318,7 +298,7 @@ const App = () => {
         link.click();
 
       } else if (format === 'pdf') {
-        // [PDF 樂高式防破圖切頁模式]
+        // [PDF 防破圖、1:1 等寬一致字體模式]
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF('p', 'mm', 'a4'); 
         const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -332,7 +312,7 @@ const App = () => {
         
         for (let i = 0; i < blocks.length; i++) {
             const block = blocks[i];
-            const canvas = await window.html2canvas(block, { scale: 2, useCORS: true, backgroundColor: "#F8FAFC", windowWidth: 1000 });
+            const canvas = await window.html2canvas(block, { scale: 2, useCORS: true, backgroundColor: "#F8FAFC", windowWidth: 1200 });
             const imgData = canvas.toDataURL("image/jpeg", 0.98);
             const imgHeightMm = (canvas.height * pdfWidth) / canvas.width;
 
@@ -348,15 +328,15 @@ const App = () => {
                  continue;
             }
 
-            // 2. 積木疊放：如果放入這塊積木會超出 A4 高度(預留底部 10mm 邊距)，整塊推到下一頁
+            // 2. 積木疊放：如果放入這塊會超出 A4 高度，整塊推到下一頁
             if (currentY + imgHeightMm > pdfHeight - 10 && currentY > 10) {
                 pdf.addPage();
                 pdf.setFillColor(248, 250, 252);
                 pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
-                currentY = 10; // 新頁面的上方預留邊距
+                currentY = 10; 
             }
 
-            // 3. 極端例外：這塊積木本身就比一整張 A4 還長 (例如超長未壓縮的圖片)
+            // 3. 極端例外：這塊積木本身就比一整張 A4 還長
             if (imgHeightMm > pdfHeight - 20) {
                  if (currentY > 15) { 
                      pdf.addPage(); 
@@ -388,7 +368,7 @@ const App = () => {
       }
     } catch (err) { 
       console.error(err); 
-      alert("匯出過程中發生錯誤，請重試。");
+      alert("匯出過程中發生錯誤，請重試。\n詳細原因: " + err.message);
     } finally {
       setIsExporting(false); 
       setExportingTopicId(null); 
@@ -492,62 +472,92 @@ const App = () => {
   // [共用會議抬頭元件] - 讓單張匯出都有資訊
   // ==========================================
   const ExportHeader = () => (
-    <div data-pdf-block="true" className="w-full px-16 pt-12 pb-4 bg-[#F8FAFC]">
-      <div className="flex justify-between items-end border-b-[3px] border-[#B89F5D]/30 pb-4">
-        <div className="flex flex-col gap-2">
-          <span className="text-[13px] font-black text-[#B89F5D] tracking-[0.2em] uppercase">Strategic Session Record</span>
-          <span className="text-3xl font-black text-slate-800 tracking-tight">{config.cover?.title || "未命名戰略會議"}</span>
+    <div data-pdf-block="true" className="w-full px-20 pt-16 pb-6 bg-[#F8FAFC]">
+      <div className="flex justify-between items-end border-b-[3px] border-[#B89F5D]/30 pb-6">
+        <div className="flex flex-col gap-3">
+          <span className="text-[14px] font-black text-[#B89F5D] tracking-[0.3em] uppercase">Strategic Session Record</span>
+          <span className="text-4xl font-black text-slate-800 tracking-tight">{config.cover?.title || "未命名戰略會議"}</span>
         </div>
-        <div className="text-sm font-bold text-slate-600 bg-white px-5 py-2.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2">
-          <Calendar className="w-4 h-4" /> {config.sessionDate || "TBD"}
+        <div className="text-xl font-bold text-slate-600 bg-white px-6 py-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2">
+          <Calendar className="w-5 h-5" /> {config.sessionDate || "TBD"}
         </div>
       </div>
     </div>
   );
 
   // ==========================================
-  // [全新結構：縮小字體、獨立塊狀的文檔排版]
+  // [全新結構：1200px 完美鎖定寬度、還原首頁設計]
   // ==========================================
   const renderFullReportExport = () => {
     return (
-      <div id="full-report-export-target" className="text-slate-800 bg-[#F8FAFC]" style={{ width: "1000px", fontFamily: FONT_FAMILY, position: "absolute", left: "-9999px", top: "-9999px", display: "none" }}>
+      <div id="full-report-export-target" className="text-slate-800 bg-[#F8FAFC]" style={{ width: "1200px", fontFamily: FONT_FAMILY, position: "absolute", left: "-9999px", top: "-9999px", display: "none" }}>
         
-        {/* 區塊 1: 直式封面頁 - 固定高度映射 A4 (1000px 寬對應約 1414px 高) */}
+        {/* 區塊 1: 直式封面頁 - 完美還原 UI 菱形鑽石設計，固定 A4 比例高度 (1697px) */}
         {exportSelection.cover && (
-          <div data-export-section="cover" data-pdf-block="true" data-pdf-full-page="true" className="w-full flex flex-col justify-center items-center text-center px-16 bg-[#0A0F1C] border-b-[20px] border-[#B89F5D] relative overflow-hidden h-[1414px]">
+          <div data-export-section="cover" data-pdf-block="true" data-pdf-full-page="true" className="w-full bg-[#0A0F1C] border-b-[24px] border-[#B89F5D] relative overflow-hidden h-[1697px]">
             <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] bg-gradient-to-bl from-[#338F88]/20 via-[#B89F5D]/10 to-transparent rounded-full blur-[100px] pointer-events-none" />
-            <div className="text-[#B89F5D] tracking-[0.4em] text-2xl font-black mb-8 uppercase relative z-10">Strategic Session Report</div>
-            <h1 className="text-6xl leading-[1.3] font-black text-white mb-10 relative z-10 max-w-[800px] whitespace-pre-wrap">{config.cover?.title || "未命名戰略會議"}</h1>
-            {config.cover?.desc && <p className="text-2xl text-slate-400 mb-20 max-w-[700px] leading-relaxed relative z-10 border-l-4 border-[#338F88] pl-6 text-left">{config.cover?.desc}</p>}
-            <div className="flex justify-center gap-16 text-xl text-slate-300 font-bold border-t border-slate-700 pt-12 mt-8 w-full max-w-[700px] relative z-10">
-              <div className="flex flex-col items-center"><span className="text-base text-slate-500 uppercase tracking-widest mb-3">Meeting Date</span><span className="text-[#FCEBAF] flex items-center gap-2">{config.sessionDate || "TBD"}</span></div>
-              <div className="flex flex-col items-center"><span className="text-base text-slate-500 uppercase tracking-widest mb-3">Attendees</span><span className="text-[#FCEBAF] flex items-center gap-2">{getAttendeePreview(config.attendees)}</span></div>
+            
+            <div className="w-full h-full flex flex-col justify-center px-24 relative z-10">
+              <div className="flex justify-between items-center w-full">
+                
+                {/* 左側資訊區 */}
+                <div className="w-[55%] flex flex-col text-white">
+                  <div className="flex items-center gap-4 mb-8">
+                    <div className="w-12 h-1.5 bg-[#B89F5D] rounded-full" />
+                    <span className="text-[#B89F5D] font-black tracking-[0.4em] text-2xl uppercase">Strategic Session</span>
+                  </div>
+                  <h1 className="font-bold mb-10 tracking-tight leading-[1.25] drop-shadow-lg whitespace-pre-wrap" style={{ fontSize: `${config.cover?.titleFontSize || 72}px` }}>
+                    {config.cover?.title || "未命名會議"}
+                  </h1>
+                  {config.cover?.desc && <p className="text-3xl text-slate-300 mb-16 leading-[1.8] font-medium border-l-4 border-[#338F88] pl-8">{config.cover?.desc}</p>}
+                  
+                  <div className="flex gap-16 py-10 border-t border-white/10 w-full max-w-[700px]">
+                    <div className="flex flex-col"><span className="text-lg text-slate-500 font-bold uppercase tracking-[0.2em] mb-3">Meeting Date</span><span className="text-2xl font-bold text-slate-200 flex items-center gap-3"><Calendar className="w-6 h-6 text-[#B89F5D]" /> {config.sessionDate || "TBD"}</span></div>
+                    <div className="flex flex-col"><span className="text-lg text-slate-500 font-bold uppercase tracking-[0.2em] mb-3">Attendees</span><span className="text-2xl font-bold text-slate-200 flex items-center gap-3"><Users className="w-6 h-6 text-[#B89F5D]" /> {getAttendeePreview(config.attendees)}</span></div>
+                  </div>
+                </div>
+
+                {/* 右側設計圖案 (菱形鑽石) */}
+                <div className="w-[45%] flex justify-center items-center z-0 relative">
+                   <div className="relative w-[500px] h-[500px] flex justify-center items-center">
+                      <div className="absolute inset-0 border border-white/5 rounded-full" />
+                      <div className="absolute inset-12 border border-[#B89F5D]/20 rounded-full" />
+                      <div className="absolute inset-24 border border-dashed border-[#338F88]/30 rounded-full" />
+                      <div className="w-72 h-72 bg-gradient-to-br from-[#B89F5D]/80 to-[#338F88]/80 rounded-[36px] rotate-45 shadow-[0_0_80px_rgba(184,159,93,0.15)] flex items-center justify-center relative overflow-hidden">
+                        <div className="absolute inset-0 bg-white/5" />
+                        <div className="w-60 h-60 bg-[#0A0F1C] rounded-[28px] flex items-center justify-center border border-white/10 shadow-inner relative overflow-hidden">
+                          <div className="w-24 h-24 bg-gradient-to-tr from-[#B89F5D] to-[#FCEBAF] rounded-2xl shadow-[0_0_40px_rgba(252,235,175,0.3)]" />
+                        </div>
+                      </div>
+                    </div>
+                </div>
+              </div>
             </div>
           </div>
         )}
 
-        {/* 區塊 2: 縮小字體的議程總覽 */}
+        {/* 區塊 2: 議程總覽 */}
         {exportSelection.agenda && config.topics?.length > 0 && (
           <div data-export-section="agenda" className="w-full bg-[#F8FAFC] pb-10">
             <ExportHeader />
-            <div data-pdf-block="true" className="w-full px-16 pt-6 pb-2">
-              <div className="bg-white px-12 py-8 rounded-t-[32px] shadow-sm border border-slate-200 border-b-0">
-                <h2 className="text-4xl font-black text-slate-900 flex items-center gap-5">
-                  <div className="w-3 h-10 bg-[#B89F5D] rounded-full"></div> 議程目錄
+            <div data-pdf-block="true" className="w-full px-20 pt-6 pb-2">
+              <div className="bg-white px-16 py-10 rounded-t-[40px] shadow-sm border border-slate-200 border-b-0">
+                <h2 className="text-5xl font-black text-slate-900 flex items-center gap-6">
+                  <div className="w-4 h-12 bg-[#B89F5D] rounded-full"></div> 議程目錄
                 </h2>
               </div>
             </div>
             {config.topics.map((t, idx, arr) => (
-              <div data-pdf-block="true" key={`agenda-${t.id}`} className="w-full px-16">
-                <div className={`bg-white px-12 py-6 border-x border-slate-200 shadow-sm flex gap-8 items-start ${idx === arr.length - 1 ? 'rounded-b-[32px] border-b pb-12 mb-8' : 'border-b border-slate-50'}`}>
-                  <div className="text-4xl font-black text-[#338F88]/30 w-12 pt-1">{String(idx + 1).padStart(2, "0")}</div>
+              <div data-pdf-block="true" key={`agenda-${t.id}`} className="w-full px-20">
+                <div className={`bg-white px-16 py-8 border-x border-slate-200 shadow-sm flex gap-10 items-start ${idx === arr.length - 1 ? 'rounded-b-[40px] border-b pb-16 mb-10' : 'border-b border-slate-50'}`}>
+                  <div className="text-5xl font-black text-[#338F88]/30 w-16 pt-1">{String(idx + 1).padStart(2, "0")}</div>
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-3">
-                      <span className="text-lg font-bold text-[#B89F5D] tracking-widest uppercase">{t.id}</span>
-                      <span className={`px-3 py-1 rounded-md text-xs font-bold ${t.status === "resolved" ? "bg-[#338F88]/10 text-[#338F88]" : "bg-slate-100 text-slate-500"}`}>{t.status === "resolved" ? "已決議" : "討論中"}</span>
+                    <div className="flex items-center gap-4 mb-4">
+                      <span className="text-xl font-bold text-[#B89F5D] tracking-widest uppercase">{t.id}</span>
+                      <span className={`px-4 py-1.5 rounded-lg text-sm font-bold ${t.status === "resolved" ? "bg-[#338F88]/10 text-[#338F88]" : "bg-slate-100 text-slate-500"}`}>{t.status === "resolved" ? "已決議" : "討論中"}</span>
                     </div>
-                    <h3 className="text-3xl font-bold text-slate-900 leading-tight mb-3">{t.title}</h3>
-                    <p className="text-xl text-slate-600 leading-relaxed opacity-90 whitespace-pre-wrap">{t.desc}</p>
+                    <h3 className="text-4xl font-bold text-slate-900 leading-tight mb-4">{t.title}</h3>
+                    <p className="text-2xl text-slate-600 leading-relaxed opacity-90 whitespace-pre-wrap">{t.desc}</p>
                   </div>
                 </div>
               </div>
@@ -564,38 +574,38 @@ const App = () => {
               <ExportHeader />
 
               {/* 議題標題 */}
-              <div data-pdf-block="true" className="w-full px-16 pt-6 pb-8">
-                <div className="bg-white px-12 py-10 rounded-[32px] shadow-sm border border-slate-200">
-                  <div className="flex items-center gap-4 mb-6">
-                    <span className="text-lg font-black tracking-widest uppercase text-slate-400 bg-slate-100 px-5 py-2 rounded-full">{t.id}</span>
-                    <span className={`px-5 py-2 rounded-full text-base font-bold border ${t.status === "resolved" ? "bg-[#F2F9F8] text-[#338F88] border-[#338F88]/20" : "bg-[#FDF9F0] text-[#B89F5D] border-[#B89F5D]/20"}`}>
+              <div data-pdf-block="true" className="w-full px-20 pt-8 pb-10">
+                <div className="bg-white px-16 py-14 rounded-[40px] shadow-sm border border-slate-200">
+                  <div className="flex items-center gap-5 mb-8">
+                    <span className="text-2xl font-black tracking-widest uppercase text-slate-400 bg-slate-100 px-6 py-2.5 rounded-full">{t.id}</span>
+                    <span className={`px-6 py-2.5 rounded-full text-xl font-bold border ${t.status === "resolved" ? "bg-[#F2F9F8] text-[#338F88] border-[#338F88]/20" : "bg-[#FDF9F0] text-[#B89F5D] border-[#B89F5D]/20"}`}>
                       {t.status === "resolved" ? "決議完成 RESOLVED" : "尚在討論 IN PROGRESS"}
                     </span>
                   </div>
-                  <h2 className="text-5xl font-black text-slate-900 leading-[1.3] tracking-tight mb-6">
+                  <h2 className="text-6xl font-black text-slate-900 leading-[1.3] tracking-tight mb-8">
                     {t.title}
                   </h2>
                   {t.desc && (
-                    <div className="border-l-8 border-[#B89F5D] bg-slate-50 p-6 rounded-r-2xl text-xl text-slate-700 leading-relaxed font-medium mt-6 whitespace-pre-wrap">
+                    <div className="border-l-8 border-[#B89F5D] bg-slate-50 p-8 rounded-r-3xl text-2xl text-slate-700 leading-relaxed font-medium mt-8 whitespace-pre-wrap">
                       {t.desc}
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* 筆記區 (逐行切成樂高積木，完全防止文字被腰斬) */}
+              {/* 筆記區 (逐行切成積木防止腰斬) */}
               {t.notes && (
                 <>
-                  <div data-pdf-block="true" className="w-full px-16 pt-2">
-                    <div className="bg-[#0F172A] rounded-t-[32px] px-12 pt-10 pb-4 relative overflow-hidden">
+                  <div data-pdf-block="true" className="w-full px-20 pt-2">
+                    <div className="bg-[#0F172A] rounded-t-[40px] px-14 pt-12 pb-6 relative overflow-hidden">
                       <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-bl-full pointer-events-none" />
-                      <h3 className="text-xl font-bold text-[#B89F5D] mb-2 flex items-center gap-4 uppercase tracking-widest"><Edit3 className="w-7 h-7" /> Live Resolution Note</h3>
+                      <h3 className="text-2xl font-bold text-[#B89F5D] mb-2 flex items-center gap-5 uppercase tracking-widest"><Edit3 className="w-8 h-8" /> Live Resolution Note</h3>
                     </div>
                   </div>
                   {t.notes.split('\n').map((para, i, arr) => (
-                    <div data-pdf-block="true" key={i} className="w-full px-16">
-                      <div className={`bg-[#0F172A] px-12 py-1.5 ${i === arr.length - 1 ? 'rounded-b-[32px] pb-10 mb-8' : ''}`}>
-                        <div className="text-[22px] text-slate-100 leading-relaxed font-medium whitespace-pre-wrap min-h-[1.75rem]">{para || " "}</div>
+                    <div data-pdf-block="true" key={i} className="w-full px-20">
+                      <div className={`bg-[#0F172A] px-14 py-2 ${i === arr.length - 1 ? 'rounded-b-[40px] pb-14 mb-10' : ''}`}>
+                        <div className="text-[26px] text-slate-100 leading-[1.8] font-medium whitespace-pre-wrap min-h-[2rem]">{para || " "}</div>
                       </div>
                     </div>
                   ))}
@@ -604,14 +614,14 @@ const App = () => {
 
               {/* 圖片區塊積木 */}
               {images.length > 0 && (
-                <div data-pdf-block="true" className="w-full px-16 pb-4 pt-2">
-                  <h3 className="text-xl font-bold text-slate-400 flex items-center gap-3 uppercase tracking-widest pl-2"><ImageIcon className="w-7 h-7" /> Visual Assets</h3>
+                <div data-pdf-block="true" className="w-full px-20 pb-6 pt-4">
+                  <h3 className="text-2xl font-bold text-slate-400 flex items-center gap-4 uppercase tracking-widest pl-4"><ImageIcon className="w-8 h-8" /> Visual Assets</h3>
                 </div>
               )}
               {images.map((img, imgIdx) => (
-                <div data-pdf-block="true" key={`img-${t.id}-${imgIdx}`} className="w-full px-16 pb-10">
-                  <div className="bg-white rounded-[32px] p-8 shadow-sm flex flex-col items-center border border-slate-200">
-                    <img src={img} className="max-w-full rounded-2xl" style={{ maxHeight: "800px" }} alt={`img-${imgIdx}`} />
+                <div data-pdf-block="true" key={`img-${t.id}-${imgIdx}`} className="w-full px-20 pb-12">
+                  <div className="bg-white rounded-[40px] p-10 shadow-sm flex flex-col items-center border border-slate-200">
+                    <img src={img} className="max-w-full rounded-2xl" style={{ maxHeight: "1100px" }} alt={`img-${imgIdx}`} />
                   </div>
                 </div>
               ))}
