@@ -13,14 +13,15 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: '未偵測到 KV 資料庫綁定' });
     }
 
-    // 使用原生 fetch 寫入資料庫，完美避開套件缺失問題
-    const response = await fetch(`${kvUrl}/set/meeting_${meetingId}`, {
+    // 【關鍵修改】：網址後方加上 ?EX=2592000，讓這份會議紀錄 30 天後自動刪除！
+    const response = await fetch(`${kvUrl}/set/meeting_${meetingId}?EX=2592000`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${kvToken}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(configData),
+      // Vercel KV 存入物件時建議轉為字串
+      body: JSON.stringify(configData), 
     });
 
     if (!response.ok) throw new Error('寫入資料庫失敗');
