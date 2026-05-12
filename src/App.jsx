@@ -154,11 +154,11 @@ const App = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // 動態載入畫圖與防破圖 PDF 引擎 (html2pdf)
+  // 動態載入畫圖與 PDF 核心引擎 (棄用會崩潰的 html2pdf.js，改回原生的 jsPDF 進行智慧分頁)
   useEffect(() => {
     const scripts = [
       "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
-      "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"
+      "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
     ];
     scripts.forEach((src) => {
       if (!document.querySelector(`script[src="${src}"]`)) {
@@ -231,10 +231,10 @@ const App = () => {
   };
 
   // ==========================================
-  // [全新：防破圖完整報告匯出引擎 (PDF & 長圖)]
+  // [全新智慧引擎：確保不破圖的 A4 直式 PDF & 完美長圖]
   // ==========================================
   const handleExportFullReport = async (format = 'pdf') => {
-    if (!window.html2canvas) {
+    if (!window.html2canvas || (format === 'pdf' && !window.jspdf)) {
       alert("匯出模組尚未載入完成，請稍候再試。");
       return;
     }
@@ -242,7 +242,7 @@ const App = () => {
     setIsExporting(true);
     setExportingTopicId('full-report'); // UI Loading state
 
-    // 動態檔名處理：首頁標題 + 日期
+    // 取得檔案名稱：首頁標題 + 日期
     const rawTitle = config.cover?.title || "戰略會議報告";
     const safeTitle = rawTitle.replace(/[\/\?<>\\:\*\|":\s]/g, '_'); // 過濾不合法字元
     const safeDate = config.sessionDate || "未定日期";
@@ -256,7 +256,7 @@ const App = () => {
 
     try {
       if (format === 'png') {
-        // 匯出長圖模式
+        // [長圖模式] - 直接對整個大容器進行一次性截圖
         const canvas = await window.html2canvas(target, { 
           scale: 2, 
           useCORS: true, 
@@ -267,25 +267,63 @@ const App = () => {
         link.download = `${fileNameBase}.png`;
         link.href = canvas.toDataURL("image/png", 1.0);
         link.click();
+
       } else if (format === 'pdf') {
-        // 匯出 PDF 模式 (智慧防破圖分頁)
-        if (!window.html2pdf) {
-          alert("PDF 模組尚未載入。");
-          return;
+        // [PDF 防破圖智慧分頁模式]
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'mm', 'a4'); // A4 直式
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        
+        // 抓取所有加上了 data-pdf-block 屬性的智慧獨立區塊
+        const blocks = target.querySelectorAll('[data-pdf-block="true"]');
+        let currentY = 0;
+
+        for (let i = 0; i < blocks.length; i++) {
+          const block = blocks[i];
+          const canvas = await window.html2canvas(block, { scale: 2, useCORS: true, backgroundColor: "#F8FAFC" });
+          const imgData = canvas.toDataURL("image/jpeg", 0.98);
+          // 依照 A4 寬度等比縮放高度
+          const imgHeightMm = (canvas.height * pdfWidth) / canvas.width;
+
+          // 1. 如果這個區塊標記為「滿版頁」(例如封面)，直接獨立一頁
+          if (block.getAttribute('data-pdf-full-page') === 'true') {
+             if (i > 0) pdf.addPage();
+             pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, imgHeightMm);
+             currentY = imgHeightMm;
+             continue;
+          }
+
+          // 2. 智慧換頁邏輯：如果把這個區塊放進去會超出 A4 高度，且目前頁面已經有東西了，就直接換到下一頁！(絕對不從中間切斷)
+          if (currentY + imgHeightMm > pdfHeight && currentY > 5) {
+            pdf.addPage();
+            currentY = 0;
+          }
+
+          // 3. 極端情況處理：如果單一區塊本身的高度就大於整張 A4 (例如超長的筆記)
+          if (imgHeightMm > pdfHeight) {
+            if (currentY > 0) { pdf.addPage(); currentY = 0; }
+            let heightLeft = imgHeightMm;
+            let position = 0;
+            // 進行垂直切片
+            while (heightLeft > 0) {
+              pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeightMm);
+              heightLeft -= pdfHeight;
+              if (heightLeft > 0) {
+                 pdf.addPage();
+                 position -= pdfHeight;
+              }
+            }
+            currentY = (imgHeightMm % pdfHeight);
+          } else {
+            // 正常貼上這個不破圖的區塊
+            pdf.addImage(imgData, 'JPEG', 0, currentY, pdfWidth, imgHeightMm);
+            currentY += imgHeightMm;
+          }
         }
 
-        const opt = {
-          margin:       0, // 邊距由內部 HTML 統一控管
-          filename:     `${fileNameBase}.pdf`,
-          image:        { type: 'jpeg', quality: 0.98 },
-          html2canvas:  { scale: 2, useCORS: true, backgroundColor: "#F8FAFC", windowWidth: 1200 },
-          // 強制設定為 1200x1697，映射完美的 A4 比例，防止 PDF 自動壓縮排版
-          jsPDF:        { unit: 'px', format: [1200, 1697], orientation: 'portrait' },
-          // 啟用智慧分頁：偵測 style={{ pageBreakInside: 'avoid' }} 避免內容被切斷
-          pagebreak:    { mode: ['css', 'legacy'] } 
-        };
-
-        await window.html2pdf().set(opt).from(target).save();
+        // 儲存套用最新檔名的 PDF
+        pdf.save(`${fileNameBase}.pdf`);
       }
     } catch (err) { 
       console.error(err); 
@@ -302,10 +340,11 @@ const App = () => {
     const dataUri = "data:application/json;charset=utf-8," + encodeURIComponent(dataStr);
     const linkElement = document.createElement("a");
     linkElement.setAttribute("href", dataUri);
-    // 專案檔名也同步更新為首頁標題+日期
+    // 專案檔名也同步更新為：首頁標題 + 日期
     const rawTitle = config.cover?.title || "戰略會議專案";
     const safeTitle = rawTitle.replace(/[\/\?<>\\:\*\|":\s]/g, '_');
-    linkElement.setAttribute("download", `${safeTitle}_${config.sessionDate || "未定日期"}.json`);
+    const safeDate = config.sessionDate || "未定日期";
+    linkElement.setAttribute("download", `${safeTitle}_${safeDate}.json`);
     linkElement.click();
   };
 
@@ -388,14 +427,15 @@ const App = () => {
   const displayConfig = isConfigOpen && tempConfig ? tempConfig : config;
 
   // ==========================================
-  // [全新：防破圖完美列印視圖]
+  // [全新：智慧防破圖 DOM 結構區塊]
+  // 每個帶有 data-pdf-block="true" 的 div，都會被 PDF 引擎獨立計算，絕不中斷切割！
   // ==========================================
   const renderFullReportExport = () => {
     return (
-      <div id="full-report-export-target" className="bg-[#F8FAFC] text-slate-800 pb-20" style={{ width: "1200px", fontFamily: FONT_FAMILY, position: "absolute", left: "-9999px", top: "-9999px", display: "none" }}>
+      <div id="full-report-export-target" className="text-slate-800" style={{ width: "1200px", fontFamily: FONT_FAMILY, position: "absolute", left: "-9999px", top: "-9999px", display: "none", backgroundColor: "#F8FAFC" }}>
         
-        {/* 直式封面頁 - 固定高度為 A4 比例，完美填滿第一頁 */}
-        <div className="flex flex-col justify-center items-center text-center p-20 bg-white border-b-[16px] border-[#B89F5D] relative overflow-hidden" style={{ height: "1697px", pageBreakAfter: 'always' }}>
+        {/* 區塊 1: 直式封面頁 - 固定 A4 比例高度，完美填滿第一頁 */}
+        <div data-pdf-block="true" data-pdf-full-page="true" className="w-full flex flex-col justify-center items-center text-center px-20 bg-white border-b-[16px] border-[#B89F5D] relative overflow-hidden h-[1697px]">
           <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-gradient-to-bl from-[#338F88]/10 via-[#B89F5D]/5 to-transparent rounded-full blur-[80px] pointer-events-none" />
           <div className="text-[#B89F5D] tracking-[0.4em] text-2xl font-black mb-8 uppercase relative z-10">Strategic Session Report</div>
           <h1 className="text-7xl leading-tight font-black text-slate-900 mb-12 relative z-10 max-w-[1000px] whitespace-pre-wrap">{config.cover?.title || "未命名戰略會議"}</h1>
@@ -405,48 +445,42 @@ const App = () => {
             <div className="flex flex-col items-center"><span className="text-lg text-slate-400 uppercase tracking-widest mb-3">Attendees</span><span className="text-[#338F88] flex items-center gap-2">{getAttendeePreview(config.attendees)}</span></div>
           </div>
         </div>
-        
-        {/* 強制分頁錨點 */}
-        <div className="html2pdf__page-break"></div>
 
-        <div className="p-20 flex flex-col gap-16">
-          
-          {/* 直式議程總覽 - 設定不可內部切斷 */}
-          {config.topics?.length > 0 && (
-            <div style={{ pageBreakInside: 'avoid', marginBottom: '20px' }}>
-              <div className="bg-white p-16 rounded-[40px] shadow-sm border border-slate-200">
-                <h2 className="text-5xl font-black text-slate-900 mb-16 pb-8 border-b-4 border-slate-100 flex items-center gap-6">
-                  <div className="w-4 h-12 bg-[#B89F5D] rounded-full"></div> 議程總覽
-                </h2>
-                <div className="flex flex-col gap-10">
-                  {config.topics.map((t, idx) => (
-                    <div key={`agenda-${t.id}`} className="flex gap-10 items-start">
-                      <div className="text-5xl font-black text-[#338F88]/30 w-16 pt-1">{String(idx + 1).padStart(2, "0")}</div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-4 mb-4">
-                          <span className="text-xl font-bold text-[#B89F5D] tracking-widest uppercase">{t.id}</span>
-                          <span className={`px-4 py-1.5 rounded-lg text-sm font-bold ${t.status === "resolved" ? "bg-[#338F88]/10 text-[#338F88]" : "bg-slate-100 text-slate-500"}`}>{t.status === "resolved" ? "已決議" : "討論中"}</span>
-                        </div>
-                        <h3 className="text-4xl font-bold text-slate-900 leading-tight mb-4">{t.title}</h3>
-                        <p className="text-2xl text-slate-600 leading-relaxed opacity-90">{t.desc}</p>
+        {/* 區塊 2: 直式議程總覽 */}
+        {config.topics?.length > 0 && (
+          <div data-pdf-block="true" className="w-full px-20 pt-20 pb-10 bg-[#F8FAFC]">
+            <div className="bg-white p-16 rounded-[40px] shadow-sm border border-slate-200">
+              <h2 className="text-5xl font-black text-slate-900 mb-16 pb-8 border-b-4 border-slate-100 flex items-center gap-6">
+                <div className="w-4 h-12 bg-[#B89F5D] rounded-full"></div> 議程總覽
+              </h2>
+              <div className="flex flex-col gap-10">
+                {config.topics.map((t, idx) => (
+                  <div key={`agenda-${t.id}`} className="flex gap-10 items-start">
+                    <div className="text-5xl font-black text-[#338F88]/30 w-16 pt-1">{String(idx + 1).padStart(2, "0")}</div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-4 mb-4">
+                        <span className="text-xl font-bold text-[#B89F5D] tracking-widest uppercase">{t.id}</span>
+                        <span className={`px-4 py-1.5 rounded-lg text-sm font-bold ${t.status === "resolved" ? "bg-[#338F88]/10 text-[#338F88]" : "bg-slate-100 text-slate-500"}`}>{t.status === "resolved" ? "已決議" : "討論中"}</span>
                       </div>
+                      <h3 className="text-4xl font-bold text-slate-900 leading-tight mb-4">{t.title}</h3>
+                      <p className="text-2xl text-slate-600 leading-relaxed opacity-90">{t.desc}</p>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          <div className="html2pdf__page-break"></div>
-
-          {/* 直式議題詳細內容 - 拆分防破圖設定 */}
-          {config.topics?.map((t) => {
-            const images = t.images?.length > 0 ? t.images : t.previewContent ? [t.previewContent] : [];
-            return (
-              <div key={`topic-${t.id}`} className="bg-white px-16 py-14 rounded-[40px] shadow-sm border border-slate-200 flex flex-col gap-12 mb-16">
-                
-                {/* [防破圖區塊 1] 標題與描述區 */}
-                <div style={{ pageBreakInside: 'avoid' }}>
+        {/* 動態區塊: 將所有議題拆分為無數個小區塊，徹底根除破圖 */}
+        {config.topics?.map((t, index) => {
+          const images = t.images?.length > 0 ? t.images : t.previewContent ? [t.previewContent] : [];
+          return (
+            <React.Fragment key={`topic-${t.id}`}>
+              
+              {/* 子區塊 A: 議題標題與描述 */}
+              <div data-pdf-block="true" className={`w-full px-20 pb-10 ${index === 0 && !config.topics.length ? 'pt-20' : 'pt-10'} bg-[#F8FAFC]`}>
+                <div className="bg-white px-16 py-14 rounded-[40px] shadow-sm border border-slate-200 flex flex-col gap-12">
                   <div className="flex items-center gap-4 mb-8">
                     <span className="text-xl font-black tracking-widest uppercase text-slate-400 bg-slate-100 px-6 py-2 rounded-full">{t.id}</span>
                     <span className={`px-6 py-2 rounded-full text-lg font-bold border ${t.status === "resolved" ? "bg-[#F2F9F8] text-[#338F88] border-[#338F88]/20" : "bg-[#FDF9F0] text-[#B89F5D] border-[#B89F5D]/20"}`}>
@@ -462,32 +496,37 @@ const App = () => {
                     </div>
                   )}
                 </div>
+              </div>
 
-                {/* [防破圖區塊 2] 會議筆記區 */}
-                {t.notes && (
-                  <div className="bg-[#0F172A] rounded-[32px] p-12" style={{ pageBreakInside: 'avoid' }}>
+              {/* 子區塊 B: 會議筆記區 */}
+              {t.notes && (
+                <div data-pdf-block="true" className="w-full px-20 pb-10 bg-[#F8FAFC]">
+                  <div className="bg-[#0F172A] rounded-[32px] p-12">
                     <h3 className="text-xl font-bold text-[#B89F5D] mb-6 flex items-center gap-3 uppercase tracking-widest"><Edit3 className="w-6 h-6" /> Live Resolution Note</h3>
                     <div className="text-2xl text-slate-100 leading-loose font-medium whitespace-pre-wrap">{t.notes}</div>
                   </div>
-                )}
+                </div>
+              )}
 
-                {/* [防破圖區塊 3] 每一張圖片獨立防止被切斷 */}
-                {images.length > 0 && (
-                  <div className="pt-8 flex flex-col gap-10">
-                    <h3 className="text-xl font-bold text-slate-400 mb-2 flex items-center gap-3 uppercase tracking-widest" style={{ pageBreakInside: 'avoid' }}>
-                      <ImageIcon className="w-6 h-6" /> Visual Assets
-                    </h3>
-                    {images.map((img, imgIdx) => (
-                      <div key={imgIdx} className="bg-slate-50 rounded-[32px] p-8 shadow-sm flex flex-col items-center border border-slate-200" style={{ pageBreakInside: 'avoid' }}>
-                        <img src={img} className="max-w-full rounded-2xl" style={{ maxHeight: "1100px" }} alt={`img-${imgIdx}`} />
-                      </div>
-                    ))}
+              {/* 子區塊 C: 圖片區域標題 */}
+              {images.length > 0 && (
+                <div data-pdf-block="true" className="w-full px-20 pb-6 pt-4 bg-[#F8FAFC]">
+                  <h3 className="text-xl font-bold text-slate-400 flex items-center gap-3 uppercase tracking-widest"><ImageIcon className="w-6 h-6" /> Visual Assets</h3>
+                </div>
+              )}
+              
+              {/* 子區塊 D: 每一張圖片都強制獨立為一個區塊，保證不被腰斬！ */}
+              {images.map((img, imgIdx) => (
+                <div data-pdf-block="true" key={`img-${t.id}-${imgIdx}`} className="w-full px-20 pb-10 bg-[#F8FAFC]">
+                  <div className="bg-slate-50 rounded-[32px] p-8 shadow-sm flex flex-col items-center border border-slate-200">
+                    <img src={img} className="max-w-full rounded-2xl" style={{ maxHeight: "1100px" }} alt={`img-${imgIdx}`} />
                   </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+                </div>
+              ))}
+
+            </React.Fragment>
+          );
+        })}
       </div>
     );
   };
