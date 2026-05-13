@@ -318,10 +318,13 @@ const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, allo
         if (blocks.length === 0) throw new Error("無可用匯出的報告區塊");
 
         let isFirstPage = true;
+        let currentY = margin;
 
         for (let i = 0; i < blocks.length; i++) {
           const block = blocks[i];
-         const isFullPage = block.getAttribute('data-pdf-full-page') === 'true' || block.getAttribute('data-export-section') === 'cover';
+          const isFullPage = block.getAttribute('data-pdf-full-page') === 'true' || block.getAttribute('data-export-section') === 'cover';
+          const section = block.getAttribute('data-export-section');
+          const isSectionStart = section !== null; // 每個 section 都獨立分頁
 
           const tempWrapper = document.createElement('div');
           tempWrapper.style.cssText = `position: fixed; top: 0; left: 0; width: 1200px; z-index: 99999; background: ${isFullPage ? '#0A0F1C' : '#F8FAFC'}; pointer-events: none;`;
@@ -355,29 +358,46 @@ const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, allo
           const imgData = canvas.toDataURL("image/jpeg", 0.95);
           const imgHeightMm = (canvas.height / canvas.width) * pdfWidth;
 
+          // 封面：整頁深色
           if (isFullPage) {
-            if (!isFirstPage) pdf.addPage();
+            if (!isFirstPage) { pdf.addPage(); }
+            pdf.setFillColor(10, 15, 28);
+            pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
             pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
             isFirstPage = false;
+            currentY = pdfHeight;
             continue;
           }
 
-          if (!isFirstPage) pdf.addPage();
+          // 每個 section（議程、每個 topic）強制新頁，置頂
+          if (isSectionStart) {
+            if (!isFirstPage) { pdf.addPage(); pdf.setFillColor(248, 250, 252); pdf.rect(0, 0, pdfWidth, pdfHeight, 'F'); }
+            currentY = margin;
+            isFirstPage = false;
+          }
 
-          pdf.setFillColor(248, 250, 252);
-          pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
+          // 計算縮放：內容寬度固定為 pdfWidth，高度等比縮放
+          const scaledHeight = imgHeightMm;
 
-          if (imgHeightMm <= usableHeight) {
-            // 內容比一頁短：置頂放，不置中
-            pdf.addImage(imgData, 'JPEG', 0, margin, pdfWidth, imgHeightMm);
+          // 若當前頁放不下且已有內容，換頁
+          if (currentY + scaledHeight > pdfHeight - margin && currentY > margin + 5) {
+            pdf.addPage();
+            pdf.setFillColor(248, 250, 252);
+            pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
+            currentY = margin;
+          }
+
+          // 若單一區塊超過一頁高度，縮小到適合
+          if (scaledHeight > usableHeight) {
+            const scale = usableHeight / scaledHeight;
+            const scaledW = pdfWidth * scale;
+            const xOff = (pdfWidth - scaledW) / 2;
+            pdf.addImage(imgData, 'JPEG', xOff, currentY, scaledW, usableHeight);
+            currentY += usableHeight + 3;
           } else {
-            // 內容超過一頁：縮小到剛好塞進一頁
-            const scale = usableHeight / imgHeightMm;
-            const scaledWidth = pdfWidth * scale;
-            const xOffset = (pdfWidth - scaledWidth) / 2;
-            pdf.addImage(imgData, 'JPEG', xOffset, margin, scaledWidth, usableHeight);
-          } 
-          isFirstPage = false;
+            pdf.addImage(imgData, 'JPEG', 0, currentY, pdfWidth, scaledHeight);
+            currentY += scaledHeight + 3;
+          }
         }
 
         pdf.save(`${fileNameBase}.pdf`);
@@ -635,11 +655,9 @@ const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, allo
       `}</style>
 
 {/* 隱藏的完整報告渲染區塊 */}
-      {isExporting && (
-        <div style={{ position: "fixed", top: 0, left: 0, width: "1200px", opacity: 0, pointerEvents: "none", zIndex: -9999 }}>
-          {renderFullReportExport()}
-        </div>
-      )}
+      <div style={{ position: "fixed", top: 0, left: "-9999px", width: "1200px", visibility: "hidden", pointerEvents: "none", zIndex: -9999 }}>
+        {isExporting ? renderFullReportExport() : null}
+      </div>
 
       <div className="h-screen flex overflow-hidden bg-[#0A0F1C] text-slate-800" style={{ fontFamily: FONT_FAMILY }}>
         <aside className={`bg-[#0A0F1C] border-r border-slate-800 flex flex-col z-40 relative transition-all duration-500 ease-in-out overflow-hidden shrink-0 ${isSidebarOpen ? "w-[320px]" : "w-[88px]"}`}>
