@@ -329,7 +329,17 @@ const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, allo
             windowWidth: 1200,
             logging: false,
             removeContainer: true,
-            ignoreElements: (el) => el.tagName === 'IFRAME',
+            foreignObjectRendering: false,
+            ignoreElements: (el) => el.tagName === 'IFRAME' || el.tagName === 'VIDEO',
+            onclone: (clonedDoc) => {
+              const allElements = clonedDoc.querySelectorAll('*');
+              allElements.forEach(el => {
+                try {
+                  if (el.style) el.style.animation = 'none';
+                  if (el.style) el.style.transition = 'none';
+                } catch(e) {}
+              });
+            }
           });
           if (canvas.width === 0 || canvas.height === 0) continue;
 
