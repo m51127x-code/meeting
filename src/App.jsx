@@ -328,8 +328,7 @@ const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, allo
           const isSectionStart = section !== null; // 每個 section 都獨立分頁
 
           const tempWrapper = document.createElement('div');
-tempWrapper.style.cssText = `position: fixed; top: -99999px; left: -99999px; width: 1200px; z-index: -1; background: ${isFullPage ? '#0A0F1C' : '#F8FAFC'}; pointer-events: none; opacity: 0;`;          const clonedBlock = block.cloneNode(true);
-          clonedBlock.querySelectorAll('*').forEach(el => {
+tempWrapper.style.cssText = `position: fixed; top: -99999px; left: -99999px; width: 1200px; background: ${isFullPage ? '#0A0F1C' : '#F8FAFC'}; pointer-events: none;`;          clonedBlock.querySelectorAll('*').forEach(el => {
             el.style.animation = 'none';
             el.style.transition = 'none';
             el.style.backdropFilter = 'none';
