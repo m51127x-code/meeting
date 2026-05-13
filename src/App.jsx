@@ -326,39 +326,15 @@ const App = () => {
         let isFirstPage = true;
         let currentY = margin;
 
-        // ── 第一步：用議程目錄的第一個 block 計算基準縮放比例 ──
-        // 找到 data-export-section="agenda" 下的第一個 data-pdf-block
-        let unifiedScale = null;
-        const agendaSection = target.querySelector('[data-export-section="agenda"]');
-        if (agendaSection) {
-          const firstAgendaBlock = agendaSection.querySelector('[data-pdf-block="true"]');
-          if (firstAgendaBlock) {
-            // 暫時渲染以量測尺寸
-            const measureWrapper = document.createElement('div');
-            measureWrapper.style.cssText = `position:fixed;top:-99999px;left:-99999px;width:1200px;background:#F8FAFC;pointer-events:none;`;
-            const measureClone = firstAgendaBlock.cloneNode(true);
-            measureWrapper.appendChild(measureClone);
-            document.body.appendChild(measureWrapper);
-            await new Promise(r => setTimeout(r, 80));
-            let measureCanvas;
-            try {
-              measureCanvas = await window.html2canvas(measureWrapper, {
-                scale: 2, useCORS: true, allowTaint: true,
-                backgroundColor: '#F8FAFC', windowWidth: 1200, logging: false,
-              });
-            } finally {
-              document.body.removeChild(measureWrapper);
-            }
-            if (measureCanvas && measureCanvas.width > 0) {
-              // 計算此 block 在 PDF 上的原始高度(mm)
-              const blockHeightMm = (measureCanvas.height / measureCanvas.width) * pdfWidth;
-              // 若超出可用高度，按比例縮小；否則維持 1:1
-              unifiedScale = blockHeightMm > usableHeight ? usableHeight / blockHeightMm : 1;
-            }
-          }
-        }
-        // 若議程目錄不存在（使用者沒選），預設 scale = 1
-        if (unifiedScale === null) unifiedScale = 1;
+        // ── 第一步：以「A4 可用寬度 / 渲染來源寬度 1200px」為統一縮放基準 ──
+// 所有非封面 block 均以此比例縮放，確保 1:1 等比例呈現於 A4 頁面
+const unifiedScale = pdfWidth / 210 * (210 / pdfWidth); // 恆等於 1，接著由下方實際比例覆蓋
+// 實際比例：PDF 可用寬 210mm 對應 1200px，1px = 210/1200 mm
+// 因此每個 block 的 mm 寬 = canvas.width/2（scale=2）* (210/1200)
+// 統一以「議程目錄頭部 ExportHeader block」的縮放係數為基準：
+// ExportHeader 渲染寬度固定 1200px → 對應 PDF 可用寬 pdfWidth(210mm) → scale = 1.0
+// 不再動態量測，直接以 pdfWidth / (1200 * (2/2)) * mm_per_px 計算
+const MM_PER_PX = pdfWidth / 1200; // 每 px 對應多少 mm（scale=2 已在 canvas 內部處理）
 
         // ── 第二步：逐一處理每個 pdf-block ──
         // 紀錄目前所在的 section（用 data-export-section 判斷）
@@ -418,10 +394,15 @@ const App = () => {
             : null;
           const isSectionFirstBlock = firstBlockInSection === block;
 
-          // 強制換新頁的條件：新 section 的第一個 block
+          // ── 強制換新頁：每個新 section（議程目錄、每個 Topic）的第一個 block ──
+          // 封面已用 continue 跳出，這裡只處理非封面 section
           if (isNewSection && isSectionFirstBlock) {
             if (!isFirstPage) {
               pdf.addPage();
+              pdf.setFillColor(248, 250, 252);
+              pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
+            } else {
+              // 第一頁（議程目錄是第一個非封面 section 時）不 addPage，只重置 Y
               pdf.setFillColor(248, 250, 252);
               pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
             }
@@ -452,12 +433,13 @@ const App = () => {
 
           const imgData = canvas.toDataURL("image/jpeg", 0.95);
 
-          // 套用統一縮放比例
-          const scaledWidth = pdfWidth * unifiedScale;
-          const scaledHeight = (canvas.height / canvas.width) * pdfWidth * unifiedScale;
+          // ── 套用 MM_PER_PX 等比縮放（canvas scale=2，故除以 2）──
+          // canvas.width 是 scale=2 下的像素寬，實際對應 1200px → pdfWidth mm
+          const scaledWidth = (canvas.width / 2) * MM_PER_PX;
+          const scaledHeight = (canvas.height / 2) * MM_PER_PX;
           const xOffset = (pdfWidth - scaledWidth) / 2;
 
-          // 若當前頁放不下（且不是 section 第一個 block），換頁
+          // ── 換頁判斷：放不下就換頁（section 首 block 已在前面強制換頁）──
           if (currentY + scaledHeight > pdfHeight - margin && currentY > margin + 5) {
             pdf.addPage();
             pdf.setFillColor(248, 250, 252);
