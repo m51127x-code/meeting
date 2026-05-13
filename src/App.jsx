@@ -588,13 +588,13 @@ const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, allo
 
               <div data-pdf-block="true" className="w-full px-20 pt-8 pb-10">
                 <div className="bg-white px-16 py-14 rounded-[40px] shadow-sm border border-slate-200">
-                  <div className="flex items-center gap-5 mb-8">
-                    <span className="text-2xl font-black tracking-widest uppercase text-slate-400 bg-slate-100 px-6 py-2.5 rounded-full">{t.id}</span>
-                    <span className={`px-6 py-2.5 rounded-full text-xl font-bold border ${t.status === "resolved" ? "bg-[#F2F9F8] text-[#338F88] border-[#338F88]/20" : "bg-[#FDF9F0] text-[#B89F5D] border-[#B89F5D]/20"}`}>
+                  <div className="flex items-center gap-3 mb-5">
+                    <span className="text-lg font-black tracking-widest uppercase text-slate-400 bg-slate-100 px-4 py-1.5 rounded-full">{t.id}</span>
+                    <span className={`px-4 py-1.5 rounded-full text-sm font-bold border ${t.status === "resolved" ? "bg-[#F2F9F8] text-[#338F88] border-[#338F88]/20" : "bg-[#FDF9F0] text-[#B89F5D] border-[#B89F5D]/20"}`}>
                       {t.status === "resolved" ? "決議完成 RESOLVED" : "尚在討論 IN PROGRESS"}
                     </span>
                   </div>
-                  <h2 className="text-6xl font-black text-slate-900 leading-[1.3] tracking-tight mb-8">
+                  <h2 className="text-[57px] font-black text-slate-900 leading-[1.3] tracking-tight mb-8">
                     {t.title}
                   </h2>
                   {t.desc && (
@@ -657,9 +657,17 @@ const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, allo
       `}</style>
 
 {/* 隱藏的完整報告渲染區塊 */}
+      {/* 匯出渲染區塊：永遠在 DOM 中但完全推出可視範圍 */}
+      <div style={{ position: "fixed", top: "-99999px", left: "-99999px", width: "1200px", pointerEvents: "none", zIndex: -1 }}>
+        {renderFullReportExport()}
+      </div>
+
+      {/* 匯出中遮罩 */}
       {isExporting && (
-        <div style={{ position: "fixed", top: "-99999px", left: "-99999px", width: "1200px", pointerEvents: "none" }}>
-          {renderFullReportExport()}
+        <div style={{ position: "fixed", inset: 0, background: "rgba(10,15,28,0.85)", zIndex: 9999, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "20px" }}>
+          <div style={{ width: "48px", height: "48px", border: "4px solid rgba(184,159,93,0.3)", borderTop: "4px solid #B89F5D", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+          <p style={{ color: "#B89F5D", fontWeight: "bold", fontSize: "16px", letterSpacing: "0.2em" }}>正在產生 PDF，請稍候...</p>
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
       )}
 
@@ -857,8 +865,8 @@ const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, allo
 
             {currentTopic && activePage !== "agenda" && activePage !== "cover" && activePage !== "summary" && (
               <div className={`px-8 md:px-16 pt-32 pb-48 mx-auto w-full max-w-[1000px] xl:max-w-[1200px] transition-all`}>
-                <div className="flex flex-wrap items-center justify-between gap-4 mb-12">
-                  <span className="px-4 py-1.5 rounded-full bg-white border border-slate-200 text-[10px] md:text-[11px] font-black text-slate-400 tracking-widest uppercase shadow-sm">{currentTopic.id}</span>
+                <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+                  <span className="px-3 py-1 rounded-full bg-white border border-slate-200 text-[10px] font-black text-slate-400 tracking-widest uppercase shadow-sm">{currentTopic.id}</span>
                   {!isViewer && (
                     <div className="flex gap-3 md:gap-4 items-center">
                       <div className="flex gap-1.5 bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
@@ -869,7 +877,7 @@ const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, allo
                   )}
                 </div>
 
-                <h2 className="text-[36px] md:text-[48px] lg:text-[56px] font-black text-slate-900 mb-10 leading-[1.3] tracking-tight">
+                <h2 className="text-[34px] md:text-[46px] lg:text-[53px] font-black text-slate-900 mb-8 leading-[1.3] tracking-tight">
                   <span className="relative inline-block px-2"><span className="absolute bottom-[10%] left-[-2%] w-[104%] h-[40%] bg-[#FCEBAF] rounded-sm transform -rotate-1 z-0 shadow-[0_4px_12px_rgba(252,235,175,0.4)]"></span><span className="relative z-10">{currentTopic.title}</span></span>
                 </h2>
 
