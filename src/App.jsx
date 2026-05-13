@@ -312,9 +312,8 @@ const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, allo
         const margin = 10;
         const usableHeight = pdfHeight - margin * 2;
 
-        // 改用 data-export-section 為單位截圖，避免每小區塊各佔一頁
-        const sections = target.querySelectorAll('[data-export-section], [data-pdf-full-page="true"]');
-        const blocks = sections.length > 0 ? sections : target.querySelectorAll('[data-pdf-block="true"]');
+        // 以 data-pdf-block 為單位截圖，section 用來判斷分頁邏輯
+        const blocks = target.querySelectorAll('[data-pdf-block="true"]');
         if (blocks.length === 0) throw new Error("無可用匯出的報告區塊");
 
         let isFirstPage = true;
@@ -323,9 +322,9 @@ const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, allo
 
         for (let i = 0; i < blocks.length; i++) {
           const block = blocks[i];
-          const isFullPage = block.getAttribute('data-pdf-full-page') === 'true' || block.getAttribute('data-export-section') === 'cover';
-          const section = block.getAttribute('data-export-section');
-          const isSectionStart = section !== null; // 每個 section 都獨立分頁
+          const isFullPage = block.getAttribute('data-pdf-full-page') === 'true';
+          const section = block.closest('[data-export-section]')?.getAttribute('data-export-section') || null;
+          const isSectionStart = block === block.closest('[data-export-section]')?.querySelector('[data-pdf-block="true"]');
 
           const tempWrapper = document.createElement('div');
           tempWrapper.style.cssText = `position: fixed; top: -99999px; left: -99999px; width: 1200px; background: ${isFullPage ? '#0A0F1C' : '#F8FAFC'}; pointer-events: none;`;
@@ -379,8 +378,8 @@ const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, allo
             isFirstPage = false;
           }
 
-          // 議程目錄第一次出現時記錄縮放比例作為基準
-          if (section === 'agenda' && unifiedScale === null) {
+         // 議程目錄第一次出現時記錄縮放比例作為基準
+          if (section === 'agenda' && unifiedScale === null && isSectionStart) {
             if (imgHeightMm > usableHeight) {
               unifiedScale = usableHeight / imgHeightMm;
             } else {
