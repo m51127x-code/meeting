@@ -331,14 +331,30 @@ const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, allo
             removeContainer: true,
             foreignObjectRendering: false,
             ignoreElements: (el) => el.tagName === 'IFRAME' || el.tagName === 'VIDEO',
-            onclone: (clonedDoc) => {
+            onclone: (clonedDoc, clonedEl) => {
+              // 移除所有動畫避免截圖異常
               const allElements = clonedDoc.querySelectorAll('*');
               allElements.forEach(el => {
                 try {
-                  if (el.style) el.style.animation = 'none';
-                  if (el.style) el.style.transition = 'none';
+                  if (el.style) {
+                    el.style.animation = 'none';
+                    el.style.transition = 'none';
+                    el.style.opacity = '1';
+                    el.style.visibility = 'visible';
+                  }
                 } catch(e) {}
               });
+              // 確保父層容器可見
+              let parent = clonedEl.parentElement;
+              while (parent) {
+                try {
+                  parent.style.opacity = '1';
+                  parent.style.overflow = 'visible';
+                  parent.style.height = 'auto';
+                  parent.style.zIndex = '1';
+                } catch(e) {}
+                parent = parent.parentElement;
+              }
             }
           });
           if (canvas.width === 0 || canvas.height === 0) continue;
@@ -625,8 +641,8 @@ const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, allo
         .custom-scrollbar-light::-webkit-scrollbar-thumb:hover { background: rgba(51, 143, 136, 0.6); }
       `}</style>
 
-      {/* 隱藏的完整報告渲染區塊，遠離畫面以防止破圖 */}
-      <div style={{ position: "fixed", top: "-20000px", left: "-20000px", pointerEvents: "none" }}>
+      {/* 隱藏的完整報告渲染區塊 */}
+      <div style={{ position: "fixed", top: "0px", left: "0px", width: "1200px", opacity: 0, pointerEvents: "none", zIndex: -1, overflow: "hidden", height: "1px" }}>
          {renderFullReportExport()}
       </div>
 
