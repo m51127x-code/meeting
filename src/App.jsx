@@ -319,6 +319,7 @@ const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, allo
 
         let isFirstPage = true;
         let currentY = margin;
+        let unifiedScale = null; // 統一縮放比例，以議程目錄為基準
 
         for (let i = 0; i < blocks.length; i++) {
           const block = blocks[i];
@@ -376,8 +377,18 @@ const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, allo
             isFirstPage = false;
           }
 
-          // 計算縮放：內容寬度固定為 pdfWidth，高度等比縮放
-          const scaledHeight = imgHeightMm;
+          // 議程目錄第一次出現時記錄縮放比例作為基準
+          if (section === 'agenda' && unifiedScale === null) {
+            if (imgHeightMm > usableHeight) {
+              unifiedScale = usableHeight / imgHeightMm;
+            } else {
+              unifiedScale = 1;
+            }
+          }
+          const scale = unifiedScale !== null ? unifiedScale : (imgHeightMm > usableHeight ? usableHeight / imgHeightMm : 1);
+          const scaledHeight = imgHeightMm * scale;
+          const scaledWidth = pdfWidth * scale;
+          const xOffset = (pdfWidth - scaledWidth) / 2;
 
           // 若當前頁放不下且已有內容，換頁
           if (currentY + scaledHeight > pdfHeight - margin && currentY > margin + 5) {
@@ -387,17 +398,8 @@ const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, allo
             currentY = margin;
           }
 
-          // 若單一區塊超過一頁高度，縮小到適合
-          if (scaledHeight > usableHeight) {
-            const scale = usableHeight / scaledHeight;
-            const scaledW = pdfWidth * scale;
-            const xOff = (pdfWidth - scaledW) / 2;
-            pdf.addImage(imgData, 'JPEG', xOff, currentY, scaledW, usableHeight);
-            currentY += usableHeight + 3;
-          } else {
-            pdf.addImage(imgData, 'JPEG', 0, currentY, pdfWidth, scaledHeight);
-            currentY += scaledHeight + 3;
-          }
+          pdf.addImage(imgData, 'JPEG', xOffset, currentY, scaledWidth, scaledHeight);
+          currentY += scaledHeight + 3;
         }
 
         pdf.save(`${fileNameBase}.pdf`);
@@ -655,9 +657,11 @@ const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, allo
       `}</style>
 
 {/* 隱藏的完整報告渲染區塊 */}
-      <div style={{ position: "fixed", top: 0, left: "-9999px", width: "1200px", visibility: "hidden", pointerEvents: "none", zIndex: -9999 }}>
-        {isExporting ? renderFullReportExport() : null}
-      </div>
+      {isExporting && (
+        <div style={{ position: "fixed", top: "-99999px", left: "-99999px", width: "1200px", pointerEvents: "none" }}>
+          {renderFullReportExport()}
+        </div>
+      )}
 
       <div className="h-screen flex overflow-hidden bg-[#0A0F1C] text-slate-800" style={{ fontFamily: FONT_FAMILY }}>
         <aside className={`bg-[#0A0F1C] border-r border-slate-800 flex flex-col z-40 relative transition-all duration-500 ease-in-out overflow-hidden shrink-0 ${isSidebarOpen ? "w-[320px]" : "w-[88px]"}`}>
