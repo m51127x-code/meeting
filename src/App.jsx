@@ -364,15 +364,18 @@ const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, allo
 
           if (!isFirstPage) pdf.addPage();
 
+          pdf.setFillColor(248, 250, 252);
+          pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
+
           if (imgHeightMm <= usableHeight) {
-            const yOffset = (pdfHeight - imgHeightMm) / 2;
-            pdf.setFillColor(248, 250, 252);
-            pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
-            pdf.addImage(imgData, 'JPEG', 0, yOffset > margin ? yOffset : margin, pdfWidth, imgHeightMm);
-          } else {
-            pdf.setFillColor(248, 250, 252);
-            pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
+            // 內容比一頁短：置頂放，不置中
             pdf.addImage(imgData, 'JPEG', 0, margin, pdfWidth, imgHeightMm);
+          } else {
+            // 內容超過一頁：縮小到剛好塞進一頁
+            const scale = usableHeight / imgHeightMm;
+            const scaledWidth = pdfWidth * scale;
+            const xOffset = (pdfWidth - scaledWidth) / 2;
+            pdf.addImage(imgData, 'JPEG', xOffset, margin, scaledWidth, usableHeight);
           }
           isFirstPage = false;
         }
@@ -631,10 +634,12 @@ const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, allo
         .custom-scrollbar-light::-webkit-scrollbar-thumb:hover { background: rgba(51, 143, 136, 0.6); }
       `}</style>
 
-      {/* 隱藏的完整報告渲染區塊 */}
-      <div style={{ position: "absolute", top: "0px", left: "-9999px", width: "1200px", opacity: 0, pointerEvents: "none", zIndex: -1, overflow: "hidden" }}>
-         {renderFullReportExport()}
-      </div>
+{/* 隱藏的完整報告渲染區塊 */}
+      {isExporting && (
+        <div style={{ position: "fixed", top: 0, left: 0, width: "1200px", opacity: 0, pointerEvents: "none", zIndex: -9999 }}>
+          {renderFullReportExport()}
+        </div>
+      )}
 
       <div className="h-screen flex overflow-hidden bg-[#0A0F1C] text-slate-800" style={{ fontFamily: FONT_FAMILY }}>
         <aside className={`bg-[#0A0F1C] border-r border-slate-800 flex flex-col z-40 relative transition-all duration-500 ease-in-out overflow-hidden shrink-0 ${isSidebarOpen ? "w-[320px]" : "w-[88px]"}`}>
