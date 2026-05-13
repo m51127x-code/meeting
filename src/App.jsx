@@ -321,43 +321,34 @@ const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, allo
           const block = blocks[i];
           const isFullPage = block.getAttribute('data-pdf-full-page') === 'true';
 
-          const canvas = await window.html2canvas(block, {
-            scale: 2,
-            useCORS: true,
-            allowTaint: true,
-            backgroundColor: isFullPage ? "#0A0F1C" : "#F8FAFC",
-            windowWidth: 1200,
-            logging: false,
-            removeContainer: true,
-            foreignObjectRendering: false,
-            ignoreElements: (el) => el.tagName === 'IFRAME' || el.tagName === 'VIDEO',
-            onclone: (clonedDoc, clonedEl) => {
-              // 移除所有動畫避免截圖異常
-              const allElements = clonedDoc.querySelectorAll('*');
-              allElements.forEach(el => {
-                try {
-                  if (el.style) {
-                    el.style.animation = 'none';
-                    el.style.transition = 'none';
-                    el.style.opacity = '1';
-                    el.style.visibility = 'visible';
-                  }
-                } catch(e) {}
-              });
-              // 確保父層容器可見
-              let parent = clonedEl.parentElement;
-              while (parent) {
-                try {
-                  parent.style.opacity = '1';
-                  parent.style.overflow = 'visible';
-                  parent.style.height = 'auto';
-                  parent.style.zIndex = '1';
-                } catch(e) {}
-                parent = parent.parentElement;
-              }
-            }
+          const tempWrapper = document.createElement('div');
+          tempWrapper.style.cssText = `position: fixed; top: 0; left: 0; width: 1200px; z-index: 99999; background: ${isFullPage ? '#0A0F1C' : '#F8FAFC'}; pointer-events: none;`;
+          const clonedBlock = block.cloneNode(true);
+          clonedBlock.querySelectorAll('*').forEach(el => {
+            el.style.animation = 'none';
+            el.style.transition = 'none';
+            el.style.backdropFilter = 'none';
+            el.style.webkitBackdropFilter = 'none';
           });
-          if (canvas.width === 0 || canvas.height === 0) continue;
+          tempWrapper.appendChild(clonedBlock);
+          document.body.appendChild(tempWrapper);
+          await new Promise(r => setTimeout(r, 80));
+
+          let canvas;
+          try {
+            canvas = await window.html2canvas(tempWrapper, {
+              scale: 2,
+              useCORS: true,
+              allowTaint: true,
+              backgroundColor: isFullPage ? '#0A0F1C' : '#F8FAFC',
+              windowWidth: 1200,
+              logging: false,
+            });
+          } finally {
+            document.body.removeChild(tempWrapper);
+          }
+
+          if (!canvas || canvas.width === 0 || canvas.height === 0) continue;
 
           const imgData = canvas.toDataURL("image/jpeg", 0.95);
           const imgHeightMm = (canvas.height / canvas.width) * pdfWidth;
@@ -369,17 +360,14 @@ const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, allo
             continue;
           }
 
-          // 一般區塊：若高度超過一頁則單獨放一頁，否則正常接續
           if (!isFirstPage) pdf.addPage();
-          
+
           if (imgHeightMm <= usableHeight) {
-            // 置中放置
             const yOffset = (pdfHeight - imgHeightMm) / 2;
             pdf.setFillColor(248, 250, 252);
             pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
             pdf.addImage(imgData, 'JPEG', 0, yOffset > margin ? yOffset : margin, pdfWidth, imgHeightMm);
           } else {
-            // 超長區塊：從頂部開始，允許超出（讀者可捲動）
             pdf.setFillColor(248, 250, 252);
             pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
             pdf.addImage(imgData, 'JPEG', 0, margin, pdfWidth, imgHeightMm);
