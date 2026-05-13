@@ -323,8 +323,11 @@ const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, allo
         for (let i = 0; i < blocks.length; i++) {
           const block = blocks[i];
           const isFullPage = block.getAttribute('data-pdf-full-page') === 'true';
-          const section = block.closest('[data-export-section]')?.getAttribute('data-export-section') || null;
-          const isSectionStart = block === block.closest('[data-export-section]')?.querySelector('[data-pdf-block="true"]');
+          const sectionEl = block.closest('[data-export-section]');
+          const section = sectionEl?.getAttribute('data-export-section') || null;
+          // 判斷是否為該 section 的第一個 pdf-block
+          const firstBlockInSection = sectionEl ? Array.from(sectionEl.querySelectorAll('[data-pdf-block="true"]'))[0] : null;
+          const isSectionStart = firstBlockInSection === block;
 
           const tempWrapper = document.createElement('div');
           tempWrapper.style.cssText = `position: fixed; top: -99999px; left: -99999px; width: 1200px; background: ${isFullPage ? '#0A0F1C' : '#F8FAFC'}; pointer-events: none;`;
