@@ -312,14 +312,16 @@ const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, allo
         const margin = 10;
         const usableHeight = pdfHeight - margin * 2;
 
-        const blocks = target.querySelectorAll('[data-pdf-block="true"]');
+        // 改用 data-export-section 為單位截圖，避免每小區塊各佔一頁
+        const sections = target.querySelectorAll('[data-export-section], [data-pdf-full-page="true"]');
+        const blocks = sections.length > 0 ? sections : target.querySelectorAll('[data-pdf-block="true"]');
         if (blocks.length === 0) throw new Error("無可用匯出的報告區塊");
 
         let isFirstPage = true;
 
         for (let i = 0; i < blocks.length; i++) {
           const block = blocks[i];
-          const isFullPage = block.getAttribute('data-pdf-full-page') === 'true';
+         const isFullPage = block.getAttribute('data-pdf-full-page') === 'true' || block.getAttribute('data-export-section') === 'cover';
 
           const tempWrapper = document.createElement('div');
           tempWrapper.style.cssText = `position: fixed; top: 0; left: 0; width: 1200px; z-index: 99999; background: ${isFullPage ? '#0A0F1C' : '#F8FAFC'}; pointer-events: none;`;
@@ -630,7 +632,7 @@ const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, allo
       `}</style>
 
       {/* 隱藏的完整報告渲染區塊 */}
-      <div style={{ position: "fixed", top: "0px", left: "0px", width: "1200px", opacity: 0, pointerEvents: "none", zIndex: -1, overflow: "hidden", height: "1px" }}>
+      <div style={{ position: "absolute", top: "0px", left: "-9999px", width: "1200px", opacity: 0, pointerEvents: "none", zIndex: -1, overflow: "hidden" }}>
          {renderFullReportExport()}
       </div>
 
