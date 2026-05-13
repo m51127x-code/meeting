@@ -96,7 +96,6 @@ const App = () => {
         .then(res => res.json())
         .then(data => {
           if (data && !data.error) {
-            // 如果後端 KV 儲存的是字串，可能需要多解析一次，這裡自動相容處理
             const parsedData = typeof data.result === 'string' ? JSON.parse(data.result) : (data.result || data);
             setConfig(parsedData);
           } else {
@@ -190,7 +189,6 @@ const App = () => {
   const generateShareLink = async () => {
     const currentDataStr = JSON.stringify(config);
 
-    // [一版一連機制] 比對內容是否改變，若無改變則直接複用舊連結，避免塞爆資料庫
     if (lastSharedInfo.dataStr === currentDataStr && lastSharedInfo.id) {
       const existingLink = `${window.location.origin}/?mode=viewer&id=${lastSharedInfo.id}`;
       try {
@@ -217,7 +215,6 @@ const App = () => {
       const result = await response.json();
       if (result.id) {
         const link = `${window.location.origin}/?mode=viewer&id=${result.id}`;
-        // 成功後，記錄這次的內容與 ID
         setLastSharedInfo({ dataStr: currentDataStr, id: result.id });
         
         try {
@@ -291,7 +288,7 @@ const App = () => {
 
         for (let i = 0; i < sections.length; i++) {
           const section = sections[i];
-const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: "#F8FAFC", windowWidth: 1200, logging: false, removeContainer: true, ignoreElements: (el) => el.tagName === 'IFRAME' });
+          const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: "#F8FAFC", windowWidth: 1200, logging: false, removeContainer: true, ignoreElements: (el) => el.tagName === 'IFRAME' });
           const base64Data = canvas.toDataURL("image/png", 1.0).replace(/^data:image\/(png|jpg);base64,/, "");
           const type = section.getAttribute('data-export-section');
           let fileName = type === 'cover' ? `00_會議封面.png` : type === 'agenda' ? `01_議程總覽.png` : `${String(i + 2).padStart(2, '0')}_${section.getAttribute('data-topic-title')}.png`;
@@ -305,96 +302,162 @@ const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, allo
         link.click();
 
       } else if (format === 'pdf') {
+        // ==========================================
+        // PDF 匯出核心邏輯（修正版）
+        //
+        // 原則：
+        // 1. 封面 → 整頁深色滿版
+        // 2. 議程目錄 → 新頁開始；以議程目錄第一個 block 的寬高計算
+        //    「統一縮放比例 (unifiedScale)」，後續所有 block 均沿用此比例
+        // 3. 每個 Topic → 強制換新頁，並沿用 unifiedScale
+        // 4. Topic 內的子 block（如筆記段落、圖片）→ 若放不下就再換頁，
+        //    但不強制新頁（除非是 Topic 的第一個 block）
+        // ==========================================
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF('p', 'mm', 'a4');
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
-        const margin = 10;
-        const usableHeight = pdfHeight - margin * 2;
+        const pdfWidth = pdf.internal.pageSize.getWidth();   // 210mm
+        const pdfHeight = pdf.internal.pageSize.getHeight(); // 297mm
+        const margin = 10; // mm
+        const usableHeight = pdfHeight - margin * 2;         // 277mm
 
-        // 以 data-pdf-block 為單位截圖，section 用來判斷分頁邏輯
         const blocks = target.querySelectorAll('[data-pdf-block="true"]');
         if (blocks.length === 0) throw new Error("無可用匯出的報告區塊");
 
         let isFirstPage = true;
         let currentY = margin;
-        let unifiedScale = null; // 統一縮放比例，以議程目錄為基準
+
+        // ── 第一步：用議程目錄的第一個 block 計算基準縮放比例 ──
+        // 找到 data-export-section="agenda" 下的第一個 data-pdf-block
+        let unifiedScale = null;
+        const agendaSection = target.querySelector('[data-export-section="agenda"]');
+        if (agendaSection) {
+          const firstAgendaBlock = agendaSection.querySelector('[data-pdf-block="true"]');
+          if (firstAgendaBlock) {
+            // 暫時渲染以量測尺寸
+            const measureWrapper = document.createElement('div');
+            measureWrapper.style.cssText = `position:fixed;top:-99999px;left:-99999px;width:1200px;background:#F8FAFC;pointer-events:none;`;
+            const measureClone = firstAgendaBlock.cloneNode(true);
+            measureWrapper.appendChild(measureClone);
+            document.body.appendChild(measureWrapper);
+            await new Promise(r => setTimeout(r, 80));
+            let measureCanvas;
+            try {
+              measureCanvas = await window.html2canvas(measureWrapper, {
+                scale: 2, useCORS: true, allowTaint: true,
+                backgroundColor: '#F8FAFC', windowWidth: 1200, logging: false,
+              });
+            } finally {
+              document.body.removeChild(measureWrapper);
+            }
+            if (measureCanvas && measureCanvas.width > 0) {
+              // 計算此 block 在 PDF 上的原始高度(mm)
+              const blockHeightMm = (measureCanvas.height / measureCanvas.width) * pdfWidth;
+              // 若超出可用高度，按比例縮小；否則維持 1:1
+              unifiedScale = blockHeightMm > usableHeight ? usableHeight / blockHeightMm : 1;
+            }
+          }
+        }
+        // 若議程目錄不存在（使用者沒選），預設 scale = 1
+        if (unifiedScale === null) unifiedScale = 1;
+
+        // ── 第二步：逐一處理每個 pdf-block ──
+        // 紀錄目前所在的 section（用 data-export-section 判斷）
+        let lastSectionKey = null; // 格式："cover" | "agenda" | "topic-<id>"
 
         for (let i = 0; i < blocks.length; i++) {
           const block = blocks[i];
           const isFullPage = block.getAttribute('data-pdf-full-page') === 'true';
-          const sectionEl = block.closest('[data-export-section]');
-          const section = sectionEl?.getAttribute('data-export-section') || null;
-          // 判斷是否為該 section 的第一個 pdf-block
-          const firstBlockInSection = sectionEl ? Array.from(sectionEl.querySelectorAll('[data-pdf-block="true"]'))[0] : null;
-          const isSectionStart = firstBlockInSection === block;
 
-          const tempWrapper = document.createElement('div');
-          tempWrapper.style.cssText = `position: fixed; top: -99999px; left: -99999px; width: 1200px; background: ${isFullPage ? '#0A0F1C' : '#F8FAFC'}; pointer-events: none;`;
-          const clonedBlock = block.cloneNode(true);
-          clonedBlock.querySelectorAll('*').forEach(el => {
+          // 找出此 block 所屬的 section
+          const sectionEl = block.closest('[data-export-section]');
+          const sectionType = sectionEl?.getAttribute('data-export-section') || null;
+          const topicTitle = sectionEl?.getAttribute('data-topic-title') || null;
+          // 用「section 類型 + topic 標題」組成唯一 section key
+          const sectionKey = sectionType === 'topic'
+            ? `topic-${topicTitle}`
+            : sectionType;
+
+          // 判斷是否為新的 section 起點
+          const isNewSection = sectionKey !== null && sectionKey !== lastSectionKey;
+          if (isNewSection) lastSectionKey = sectionKey;
+
+          // ── 封面：整頁深色滿版 ──
+          if (isFullPage) {
+            if (!isFirstPage) pdf.addPage();
+            pdf.setFillColor(10, 15, 28);
+            pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
+
+            const coverWrapper = document.createElement('div');
+            coverWrapper.style.cssText = `position:fixed;top:-99999px;left:-99999px;width:1200px;background:#0A0F1C;pointer-events:none;`;
+            const coverClone = block.cloneNode(true);
+            disableAnimations(coverClone);
+            coverWrapper.appendChild(coverClone);
+            document.body.appendChild(coverWrapper);
+            await new Promise(r => setTimeout(r, 80));
+            let coverCanvas;
             try {
-              el.style.animation = 'none';
-              el.style.transition = 'none';
-              el.style.backdropFilter = 'none';
-              el.style.webkitBackdropFilter = 'none';
-            } catch(e) {}
-          });
-          tempWrapper.appendChild(clonedBlock);
-          document.body.appendChild(tempWrapper);
+              coverCanvas = await window.html2canvas(coverWrapper, {
+                scale: 2, useCORS: true, allowTaint: true,
+                backgroundColor: '#0A0F1C', windowWidth: 1200, logging: false,
+              });
+            } finally {
+              document.body.removeChild(coverWrapper);
+            }
+            if (coverCanvas && coverCanvas.width > 0) {
+              pdf.addImage(coverCanvas.toDataURL("image/jpeg", 0.95), 'JPEG', 0, 0, pdfWidth, pdfHeight);
+            }
+            isFirstPage = false;
+            currentY = pdfHeight; // 封面用掉整頁
+            continue;
+          }
+
+          // ── 非封面 block：議程或 Topic ──
+          // 原則：議程目錄的第一個 block、以及每個 Topic 的第一個 block → 強制換頁
+          const firstBlockInSection = sectionEl
+            ? Array.from(sectionEl.querySelectorAll('[data-pdf-block="true"]'))[0]
+            : null;
+          const isSectionFirstBlock = firstBlockInSection === block;
+
+          // 強制換新頁的條件：新 section 的第一個 block
+          if (isNewSection && isSectionFirstBlock) {
+            if (!isFirstPage) {
+              pdf.addPage();
+              pdf.setFillColor(248, 250, 252);
+              pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
+            }
+            currentY = margin;
+            isFirstPage = false;
+          }
+
+          // 截圖此 block
+          const wrapper = document.createElement('div');
+          wrapper.style.cssText = `position:fixed;top:-99999px;left:-99999px;width:1200px;background:#F8FAFC;pointer-events:none;`;
+          const clone = block.cloneNode(true);
+          disableAnimations(clone);
+          wrapper.appendChild(clone);
+          document.body.appendChild(wrapper);
           await new Promise(r => setTimeout(r, 80));
 
           let canvas;
           try {
-            canvas = await window.html2canvas(tempWrapper, {
-              scale: 2,
-              useCORS: true,
-              allowTaint: true,
-              backgroundColor: isFullPage ? '#0A0F1C' : '#F8FAFC',
-              windowWidth: 1200,
-              logging: false,
+            canvas = await window.html2canvas(wrapper, {
+              scale: 2, useCORS: true, allowTaint: true,
+              backgroundColor: '#F8FAFC', windowWidth: 1200, logging: false,
             });
           } finally {
-            document.body.removeChild(tempWrapper);
+            document.body.removeChild(wrapper);
           }
 
           if (!canvas || canvas.width === 0 || canvas.height === 0) continue;
 
           const imgData = canvas.toDataURL("image/jpeg", 0.95);
-          const imgHeightMm = (canvas.height / canvas.width) * pdfWidth;
 
-          // 封面：整頁深色
-          if (isFullPage) {
-            if (!isFirstPage) { pdf.addPage(); }
-            pdf.setFillColor(10, 15, 28);
-            pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
-            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-            isFirstPage = false;
-            currentY = pdfHeight;
-            continue;
-          }
-
-          // 每個 section（議程、每個 topic）強制新頁，置頂
-          if (isSectionStart) {
-            if (!isFirstPage) { pdf.addPage(); pdf.setFillColor(248, 250, 252); pdf.rect(0, 0, pdfWidth, pdfHeight, 'F'); }
-            currentY = margin;
-            isFirstPage = false;
-          }
-
-         // 議程目錄第一次出現時記錄縮放比例作為基準
-          if (section === 'agenda' && unifiedScale === null && isSectionStart) {
-            if (imgHeightMm > usableHeight) {
-              unifiedScale = usableHeight / imgHeightMm;
-            } else {
-              unifiedScale = 1;
-            }
-          }
-          const scale = unifiedScale !== null ? unifiedScale : (imgHeightMm > usableHeight ? usableHeight / imgHeightMm : 1);
-          const scaledHeight = imgHeightMm * scale;
-          const scaledWidth = pdfWidth * scale;
+          // 套用統一縮放比例
+          const scaledWidth = pdfWidth * unifiedScale;
+          const scaledHeight = (canvas.height / canvas.width) * pdfWidth * unifiedScale;
           const xOffset = (pdfWidth - scaledWidth) / 2;
 
-          // 若當前頁放不下且已有內容，換頁
+          // 若當前頁放不下（且不是 section 第一個 block），換頁
           if (currentY + scaledHeight > pdfHeight - margin && currentY > margin + 5) {
             pdf.addPage();
             pdf.setFillColor(248, 250, 252);
@@ -404,6 +467,9 @@ const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, allo
 
           pdf.addImage(imgData, 'JPEG', xOffset, currentY, scaledWidth, scaledHeight);
           currentY += scaledHeight + 3;
+
+          // 更新 isFirstPage flag
+          if (isFirstPage) isFirstPage = false;
         }
 
         pdf.save(`${fileNameBase}.pdf`);
@@ -415,6 +481,18 @@ const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, allo
       setIsExporting(false); 
     }
   };
+
+  // 輔助函式：停用動畫與濾鏡（避免 html2canvas 渲染異常）
+  function disableAnimations(el) {
+    el.querySelectorAll('*').forEach(child => {
+      try {
+        child.style.animation = 'none';
+        child.style.transition = 'none';
+        child.style.backdropFilter = 'none';
+        child.style.webkitBackdropFilter = 'none';
+      } catch(e) {}
+    });
+  }
 
   const exportConfigJSON = () => {
     const dataStr = JSON.stringify(config, null, 2);
@@ -546,14 +624,14 @@ const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, allo
               </div>
             </div>
 
-                <div className="w-[40%] flex flex-col justify-center items-center relative z-10">
-                  <div className="w-48 h-48 bg-gradient-to-br from-[#B89F5D]/30 to-[#338F88]/20 rounded-[40px] rotate-45 border border-white/10 flex items-center justify-center">
-                    <div className="w-32 h-32 bg-[#0A0F1C] rounded-[24px] border border-white/10 flex items-center justify-center">
-                      <div className="w-12 h-12 bg-gradient-to-tr from-[#B89F5D] to-[#FCEBAF] rounded-xl" />
-                    </div>
-                  </div>
+            <div className="w-[40%] flex flex-col justify-center items-center relative z-10">
+              <div className="w-48 h-48 bg-gradient-to-br from-[#B89F5D]/30 to-[#338F88]/20 rounded-[40px] rotate-45 border border-white/10 flex items-center justify-center">
+                <div className="w-32 h-32 bg-[#0A0F1C] rounded-[24px] border border-white/10 flex items-center justify-center">
+                  <div className="w-12 h-12 bg-gradient-to-tr from-[#B89F5D] to-[#FCEBAF] rounded-xl" />
                 </div>
               </div>
+            </div>
+          </div>
         )}
 
         {exportSelection.agenda && config.topics?.length > 0 && (
@@ -660,8 +738,7 @@ const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, allo
         .custom-scrollbar-light::-webkit-scrollbar-thumb:hover { background: rgba(51, 143, 136, 0.6); }
       `}</style>
 
-{/* 隱藏的完整報告渲染區塊 */}
-      {/* 匯出渲染區塊：永遠在 DOM 中但完全推出可視範圍 */}
+      {/* 隱藏的完整報告渲染區塊 */}
       <div style={{ position: "fixed", top: "-99999px", left: "-99999px", width: "1200px", pointerEvents: "none", zIndex: -1 }}>
         {renderFullReportExport()}
       </div>
@@ -808,7 +885,6 @@ const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, allo
                     </button>
                   </div>
                   
-                  {/* 右側設計圖案 (UI 視圖版) */}
                   <div className="hidden lg:flex w-[45%] justify-center items-center pointer-events-none z-0 relative">
                     <div className="relative w-[360px] h-[360px] xl:w-[460px] xl:h-[460px] flex justify-center items-center">
                       <div className="absolute inset-0 border border-white/5 rounded-full animate-[spin_60s_linear_infinite]" />
@@ -1014,7 +1090,7 @@ const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, allo
           )}
         </div>
 
-        {/* 筆記按鈕 (與會者與主講者顯示不同圖示) */}
+        {/* 筆記按鈕 */}
         {!isNotesOpen && activePage !== "cover" && activePage !== "agenda" && (
           <button onClick={() => setIsNotesOpen(true)} className="fixed right-10 bottom-10 w-14 h-14 bg-[#0F172A] text-white rounded-full flex items-center justify-center shadow-[0_20px_40px_rgba(15,23,42,0.4)] z-40 hover:scale-110 hover:bg-[#1E293B] transition-all duration-300 group">
             {isViewer ? (
