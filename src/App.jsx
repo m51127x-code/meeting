@@ -328,11 +328,15 @@ const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, allo
           const isSectionStart = section !== null; // 每個 section 都獨立分頁
 
           const tempWrapper = document.createElement('div');
-tempWrapper.style.cssText = `position: fixed; top: -99999px; left: -99999px; width: 1200px; background: ${isFullPage ? '#0A0F1C' : '#F8FAFC'}; pointer-events: none;`;          clonedBlock.querySelectorAll('*').forEach(el => {
-            el.style.animation = 'none';
-            el.style.transition = 'none';
-            el.style.backdropFilter = 'none';
-            el.style.webkitBackdropFilter = 'none';
+          tempWrapper.style.cssText = `position: fixed; top: -99999px; left: -99999px; width: 1200px; background: ${isFullPage ? '#0A0F1C' : '#F8FAFC'}; pointer-events: none;`;
+          const clonedBlock = block.cloneNode(true);
+          clonedBlock.querySelectorAll('*').forEach(el => {
+            try {
+              el.style.animation = 'none';
+              el.style.transition = 'none';
+              el.style.backdropFilter = 'none';
+              el.style.webkitBackdropFilter = 'none';
+            } catch(e) {}
           });
           tempWrapper.appendChild(clonedBlock);
           document.body.appendChild(tempWrapper);
@@ -1024,10 +1028,10 @@ tempWrapper.style.cssText = `position: fixed; top: -99999px; left: -99999px; wid
             <div className="h-full flex flex-col">
               <div className="p-6 bg-slate-50 border-b flex justify-between items-center"><h3 className="text-xl font-black text-slate-800">控制中心</h3><button onClick={() => setIsConfigOpen(false)} className="p-2 text-slate-400 hover:text-slate-900"><X className="w-5 h-5" /></button></div>
               <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar-light pb-32">
-                <button onClick={() => { if (window.confirm("確定要清除所有會議資料嗎？")) { sessionStorage.removeItem("strategyMeetingData"); setTempConfig({...INITIAL_CLEAN_CONFIG}); } }} className="w-full flex items-center justify-center gap-2 py-3 bg-red-50 text-red-400 rounded-xl text-xs font-bold hover:bg-red-100 transition-colors border border-red-200 mb-2">清除所有資料</button>
-                <div className="flex gap-3">
-                  <button onClick={exportConfigJSON} className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-[#0F172A] text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-colors shadow-lg"><FileDown className="w-4 h-4" /> 儲存專案</button>
-                  <label className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-[#B89F5D] text-white rounded-xl text-xs font-bold cursor-pointer hover:bg-[#A68F50] transition-colors shadow-lg"><Upload className="w-4 h-4" /> 讀取專案<input type="file" className="hidden" accept=".json" onChange={importConfigJSON} /></label>
+                <div className="flex gap-2">
+                  <button onClick={exportConfigJSON} className="flex-1 flex items-center justify-center gap-1.5 py-3.5 bg-[#0F172A] text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-colors shadow-lg"><FileDown className="w-4 h-4" /> 儲存</button>
+                  <label className="flex-1 flex items-center justify-center gap-1.5 py-3.5 bg-[#B89F5D] text-white rounded-xl text-xs font-bold cursor-pointer hover:bg-[#A68F50] transition-colors shadow-lg"><Upload className="w-4 h-4" /> 讀取<input type="file" className="hidden" accept=".json" onChange={importConfigJSON} /></label>
+                  <button onClick={() => { if (window.confirm("確定要清除所有會議資料嗎？")) { sessionStorage.removeItem("strategyMeetingData"); setTempConfig({...INITIAL_CLEAN_CONFIG}); setConfig({...INITIAL_CLEAN_CONFIG}); setIsConfigOpen(false); } }} className="flex-1 flex items-center justify-center gap-1.5 py-3.5 bg-slate-100 text-slate-500 rounded-xl text-xs font-bold hover:bg-red-50 hover:text-red-400 transition-colors shadow-sm border border-slate-200"><Trash2 className="w-4 h-4" /> 清除</button>
                 </div>
                 <div className="space-y-5">
                   <span className="text-[11px] font-black text-slate-400 tracking-widest uppercase">基本會議設定</span>
