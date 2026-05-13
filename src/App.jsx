@@ -376,7 +376,7 @@ const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, allo
             const scaledWidth = pdfWidth * scale;
             const xOffset = (pdfWidth - scaledWidth) / 2;
             pdf.addImage(imgData, 'JPEG', xOffset, margin, scaledWidth, usableHeight);
-          }
+          } 
           isFirstPage = false;
         }
 
