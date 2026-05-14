@@ -388,22 +388,16 @@ const MM_PER_PX = pdfWidth / 1200; // 每 px 對應多少 mm（scale=2 已在 ca
             continue;
           }
 
-          // ── 非封面 block：議程或 Topic ──
-          // 原則：議程目錄的第一個 block、以及每個 Topic 的第一個 block → 強制換頁
-          const firstBlockInSection = sectionEl
-            ? Array.from(sectionEl.querySelectorAll('[data-pdf-block="true"]'))[0]
-            : null;
-          const isSectionFirstBlock = firstBlockInSection === block;
+  
 
-          // ── 強制換新頁：每個新 section（議程目錄、每個 Topic）的第一個 block ──
-          // 封面已用 continue 跳出，這裡只處理非封面 section
-          if (isNewSection && isSectionFirstBlock) {
+          // ── 強制換新頁：每個新 section 的第一個 block 必定換頁 ──
+          // 直接用 isNewSection 判斷，不再依賴 isSectionFirstBlock（避免 DOM 查找失敗）
+          if (isNewSection) {
             if (!isFirstPage) {
               pdf.addPage();
               pdf.setFillColor(248, 250, 252);
               pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
             } else {
-              // 第一頁（議程目錄是第一個非封面 section 時）不 addPage，只重置 Y
               pdf.setFillColor(248, 250, 252);
               pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
             }
@@ -569,7 +563,7 @@ const MM_PER_PX = pdfWidth / 1200; // 每 px 對應多少 mm（scale=2 已在 ca
 
   const selectedTopicsList = config.topics?.filter(t => exportSelection[t.id]) || [];
 
-  const ExportHeader = () => (
+  const exportHeaderJSX = (
     <div data-pdf-block="true" className="w-full px-20 pt-16 pb-6 bg-[#F8FAFC]">
       <div className="flex justify-between items-end border-b-[3px] border-[#B89F5D]/30 pb-6">
         <div className="flex flex-col gap-3">
@@ -619,7 +613,7 @@ const MM_PER_PX = pdfWidth / 1200; // 每 px 對應多少 mm（scale=2 已在 ca
 
         {exportSelection.agenda && config.topics?.length > 0 && (
           <div data-export-section="agenda" className="w-full bg-[#F8FAFC] pb-10">
-            <ExportHeader />
+            {exportHeaderJSX}
             <div data-pdf-block="true" className="w-full px-20 pt-6 pb-2">
               <div className="bg-white px-16 py-10 rounded-t-[40px] shadow-sm border border-slate-200 border-b-0">
                 <h2 className="text-5xl font-black text-slate-900 flex items-center gap-6">
@@ -649,7 +643,7 @@ const MM_PER_PX = pdfWidth / 1200; // 每 px 對應多少 mm（scale=2 已在 ca
           const images = t.images?.length > 0 ? t.images : t.previewContent ? [t.previewContent] : [];
           return (
            <div data-export-section={`topic-${t.id}`} data-topic-title={t.title} key={`topic-${t.id}`} className="w-full bg-[#F8FAFC] pb-10">
-              <ExportHeader />
+              {exportHeaderJSX}
 
               <div data-pdf-block="true" className="w-full px-20 pt-8 pb-10">
                 <div className="bg-white px-16 py-14 rounded-[40px] shadow-sm border border-slate-200">
