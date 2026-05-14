@@ -659,7 +659,7 @@ const xOffset = (pdfWidth - scaledWidth) / 2;
 
       {exportSelection.agenda && config.topics?.length > 0 && (
         <div data-export-section="agenda" className="w-full bg-[#F8FAFC] pb-10">
-          
+          <div data-pdf-block="true" className="w-full bg-[#F8FAFC]">
             {exportHeaderJSX}
             <div className="px-20 pt-6 pb-10">
               <div className="bg-white rounded-[40px] shadow-sm border border-slate-200 overflow-hidden">
@@ -693,67 +693,46 @@ const xOffset = (pdfWidth - scaledWidth) / 2;
         const images = t.images?.length > 0 ? t.images : t.previewContent ? [t.previewContent] : [];
         return (
           <div data-export-section={`topic-${t.id}`} data-topic-title={t.title} key={`topic-${t.id}`} className="w-full bg-[#F8FAFC] pb-10">
+
             <div data-pdf-block="true" className="w-full bg-[#F8FAFC]">
-  {exportHeaderJSX}
-  <div className="px-20 pt-8 pb-0">
-
-    {/* 議題標籤列：改成純文字，不用膠囊 */}
-    <div className="flex items-center gap-4 mb-5 px-2">
-      <span className="text-sm font-black text-slate-400 tracking-[0.25em] uppercase">{t.id}</span>
-      <span className="text-sm font-bold" style={{ color: t.status === "resolved" ? "#338F88" : "#B89F5D" }}>
-        {t.status === "resolved" ? "✓ RESOLVED" : "● IN PROGRESS"}
-      </span>
-    </div>
-
-    {/* 議題內容卡片：拿掉大 padding，縮緊間距 */}
-    <div className="bg-white px-16 py-10 rounded-[32px] shadow-sm border border-slate-200">
-      <h2 className="text-[52px] font-black text-slate-900 leading-[1.3] tracking-tight mb-6">
-        {t.title}
-      </h2>
-      {t.desc && (
-        <div className="border-l-8 border-[#B89F5D] bg-slate-50 p-6 rounded-r-3xl text-2xl text-slate-700 leading-relaxed font-medium whitespace-pre-wrap">
-          {t.desc}
-        </div>
-      )}
-    </div>
-  </div>
-
-  {t.notes && (
-    <div className="w-full px-20 pt-4 pb-8">
-      <div className="bg-[#0F172A] rounded-[32px] px-14 pt-6 pb-7 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-bl-full pointer-events-none" />
-        <h3 className="text-xl font-bold text-[#B89F5D] mb-3 flex items-center gap-4 uppercase tracking-widest">
-          <Edit3 className="w-6 h-6" /> Live Resolution Note
-        </h3>
-        {t.notes.split('\n').map((para, i) => (
-          <div key={i} className="text-[24px] text-slate-100 leading-[1.8] font-medium whitespace-pre-wrap min-h-[1.8rem]">
-            {para || " "}
-          </div>
-        ))}
-      </div>
-    </div>
-  )}
-</div>
-
-            {t.notes && (
-              <div data-pdf-block="true" className="w-full px-20 pt-2 mb-6">
-                <div className="bg-[#0F172A] rounded-[40px] px-14 pt-7 pb-8 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-bl-full pointer-events-none" />
-                  <h3 className="text-2xl font-bold text-[#B89F5D] mb-4 flex items-center gap-5 uppercase tracking-widest">
-                    <Edit3 className="w-8 h-8" /> Live Resolution Note
-                  </h3>
-                  {t.notes.split('\n').map((para, i) => (
-                    <div key={i} className="text-[26px] text-slate-100 leading-[1.8] font-medium whitespace-pre-wrap min-h-[2rem]">
-                      {para || " "}
+              {exportHeaderJSX}
+              <div className="px-20 pt-8 pb-0">
+                <div className="flex items-center gap-4 mb-5 px-2">
+                  <span className="text-sm font-black text-slate-400 tracking-[0.25em] uppercase">{t.id}</span>
+                  <span className="text-sm font-bold" style={{ color: t.status === "resolved" ? "#338F88" : "#B89F5D" }}>
+                    {t.status === "resolved" ? "✓ RESOLVED" : "● IN PROGRESS"}
+                  </span>
+                </div>
+                <div className="bg-white px-16 py-10 rounded-[32px] shadow-sm border border-slate-200">
+                  <h2 className="text-[52px] font-black text-slate-900 leading-[1.3] tracking-tight mb-6">
+                    {t.title}
+                  </h2>
+                  {t.desc && (
+                    <div className="border-l-8 border-[#B89F5D] bg-slate-50 p-6 rounded-r-3xl text-2xl text-slate-700 leading-relaxed font-medium whitespace-pre-wrap">
+                      {t.desc}
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
-            )}
 
-            
+              {t.notes && (
+                <div className="w-full px-20 pt-4 pb-8">
+                  <div className="bg-[#0F172A] rounded-[32px] px-14 pt-6 pb-7 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-bl-full pointer-events-none" />
+                    <h3 className="text-xl font-bold text-[#B89F5D] mb-3 flex items-center gap-4 uppercase tracking-widest">
+                      <Edit3 className="w-6 h-6" /> Live Resolution Note
+                    </h3>
+                    {t.notes.split('\n').map((para, i) => (
+                      <div key={i} className="text-[24px] text-slate-100 leading-[1.8] font-medium whitespace-pre-wrap min-h-[1.8rem]">
+                        {para || " "}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
 
-{images.map((img, imgIdx) => (
+            {images.map((img, imgIdx) => (
               <div data-pdf-block="true" key={`img-${t.id}-${imgIdx}`} className="w-full px-20 pb-12">
                 <div className="bg-white rounded-[40px] p-10 shadow-sm flex flex-col items-center border border-slate-200">
                   {imgIdx === 0 && (
@@ -766,13 +745,10 @@ const xOffset = (pdfWidth - scaledWidth) / 2;
                 </div>
               </div>
             ))}
+
           </div>
         );
       })}
-
-    </div>
-  );
-};
 
   return (
     <>
