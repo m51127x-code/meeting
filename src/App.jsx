@@ -291,7 +291,11 @@ const App = () => {
           const canvas = await window.html2canvas(section, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: "#F8FAFC", windowWidth: 1200, logging: false, removeContainer: true, ignoreElements: (el) => el.tagName === 'IFRAME' });
           const base64Data = canvas.toDataURL("image/png", 1.0).replace(/^data:image\/(png|jpg);base64,/, "");
           const type = section.getAttribute('data-export-section');
-          let fileName = type === 'cover' ? `00_會議封面.png` : type === 'agenda' ? `01_議程總覽.png` : `${String(i + 2).padStart(2, '0')}_${section.getAttribute('data-topic-title')}.png`;
+          let fileName = type === 'cover'
+            ? `00_會議封面.png`
+            : type === 'agenda'
+            ? `01_議程總覽.png`
+            : `${String(i + 2).padStart(2, '0')}_${section.getAttribute('data-topic-title') || type}.png`;
           folder.file(fileName, base64Data, { base64: true });
         }
 
@@ -347,11 +351,8 @@ const MM_PER_PX = pdfWidth / 1200; // 每 px 對應多少 mm（scale=2 已在 ca
           // 找出此 block 所屬的 section
           const sectionEl = block.closest('[data-export-section]');
           const sectionType = sectionEl?.getAttribute('data-export-section') || null;
-          const topicTitle = sectionEl?.getAttribute('data-topic-title') || null;
-          // 用「section 類型 + topic 標題」組成唯一 section key
-          const sectionKey = sectionType === 'topic'
-            ? `topic-${topicTitle}`
-            : sectionType;
+          // sectionType 本身已包含唯一 ID（如 "topic-Topic 1"），直接使用
+          const sectionKey = sectionType;
 
           // 判斷是否為新的 section 起點
           const isNewSection = sectionKey !== null && sectionKey !== lastSectionKey;
@@ -647,7 +648,7 @@ const MM_PER_PX = pdfWidth / 1200; // 每 px 對應多少 mm（scale=2 已在 ca
         {selectedTopicsList.map((t, index) => {
           const images = t.images?.length > 0 ? t.images : t.previewContent ? [t.previewContent] : [];
           return (
-            <div data-export-section="topic" data-topic-title={t.title} key={`topic-${t.id}`} className="w-full bg-[#F8FAFC] pb-10">
+           <div data-export-section={`topic-${t.id}`} data-topic-title={t.title} key={`topic-${t.id}`} className="w-full bg-[#F8FAFC] pb-10">
               <ExportHeader />
 
               <div data-pdf-block="true" className="w-full px-20 pt-8 pb-10">
