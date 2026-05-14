@@ -606,8 +606,8 @@ const xOffset = (pdfWidth - scaledWidth) / 2;
     <div className="w-full px-20 pt-16 pb-6 bg-[#F8FAFC]">
       <div className="flex justify-between items-end border-b-[3px] border-[#B89F5D]/30 pb-6">
         <div className="flex flex-col gap-3">
-          <span className="text-[14px] font-black text-[#B89F5D] tracking-[0.3em] uppercase">Strategic Session Record</span>
-          <span className="text-4xl font-black text-slate-800 tracking-tight">{config.cover?.title || "未命名戰略會議"}</span>
+          <span className="text-[14px] font-black text-[#B89F5D] tracking-[0.3em] uppercase">ENABLEMENT SESSION Record</span>
+          <span className="text-4xl font-black text-slate-800 tracking-tight">{config.cover?.title || "未命名會議"}</span>
         </div>
         <div className="text-xl font-bold text-slate-600 bg-white px-6 py-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2">
           <Calendar className="w-5 h-5" /> {config.sessionDate || "TBD"}
