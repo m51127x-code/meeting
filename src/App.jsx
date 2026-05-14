@@ -617,15 +617,27 @@ const MM_PER_PX = pdfWidth / 1200; // 每 px 對應多少 mm（scale=2 已在 ca
             <div data-pdf-block="true" className="w-full bg-[#F8FAFC]">
               {exportHeaderJSX}
               <div className="px-20 pt-6 pb-10">
-              <div className="bg-white rounded-[40px] shadow-sm border border-slate-200 overflow-hidden">
-                <div className="px-16 py-10 border-b border-slate-100">
-                  <h2 className="text-5xl font-black text-slate-900 flex items-center gap-6">
-                    <div className="w-4 h-12 bg-[#B89F5D] rounded-full"></div> 議程目錄
-                  </h2>
+                  <div className="bg-white rounded-[40px] shadow-sm border border-slate-200 overflow-hidden">
+                    <div className="px-16 py-10 border-b border-slate-100">
+                      <h2 className="text-5xl font-black text-slate-900 flex items-center gap-6">
+                        <div className="w-4 h-12 bg-[#B89F5D] rounded-full"></div> 議程目錄
+                      </h2>
+                    </div>
+                    {config.topics.map((t, idx, arr) => (
+                      <div key={`agenda-${t.id}`} className={`px-16 py-8 flex gap-10 items-start ${idx !== arr.length - 1 ? 'border-b border-slate-100' : ''}`}>
+                        <div className="text-5xl font-black text-[#338F88]/30 w-16 pt-1">{String(idx + 1).padStart(2, "0")}</div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-4 mb-4">
+                            <span className="text-xl font-bold text-[#B89F5D] tracking-widest uppercase">{t.id}</span>
+                            <span className={`px-4 py-1.5 rounded-lg text-sm font-bold ${t.status === "resolved" ? "bg-[#338F88]/10 text-[#338F88]" : "bg-slate-100 text-slate-500"}`}>{t.status === "resolved" ? "已決議" : "討論中"}</span>
+                          </div>
+                          <h3 className="text-4xl font-bold text-slate-900 leading-tight mb-4">{t.title}</h3>
+                          <p className="text-2xl text-slate-600 leading-relaxed opacity-90 whitespace-pre-wrap">{t.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                 </div>
-            </div>
-                {config.topics.map((t, idx, arr) => (
                   <div key={`agenda-${t.id}`} className={`px-16 py-8 flex gap-10 items-start ${idx !== arr.length - 1 ? 'border-b border-slate-100' : ''}`}>
                     <div className="text-5xl font-black text-[#338F88]/30 w-16 pt-1">{String(idx + 1).padStart(2, "0")}</div>
                     <div className="flex-1">
@@ -650,24 +662,23 @@ const MM_PER_PX = pdfWidth / 1200; // 每 px 對應多少 mm（scale=2 已在 ca
               <div data-pdf-block="true" className="w-full bg-[#F8FAFC]">
                 {exportHeaderJSX}
                 <div className="px-20 pt-8 pb-10">
-                <div className="bg-white px-16 py-14 rounded-[40px] shadow-sm border border-slate-200">
-                  <div className="flex items-center gap-3 mb-5">
-                    <span className="text-lg font-black tracking-widest uppercase text-slate-400 bg-slate-100 px-4 py-1.5 rounded-full">{t.id}</span>
-                    <span className={`px-4 py-1.5 rounded-full text-sm font-bold border ${t.status === "resolved" ? "bg-[#F2F9F8] text-[#338F88] border-[#338F88]/20" : "bg-[#FDF9F0] text-[#B89F5D] border-[#B89F5D]/20"}`}>
-                      {t.status === "resolved" ? "決議完成 RESOLVED" : "尚在討論 IN PROGRESS"}
-                    </span>
+                  <div className="bg-white px-16 py-14 rounded-[40px] shadow-sm border border-slate-200">
+                    <div className="flex items-center gap-3 mb-5">
+                      <span className="text-lg font-black tracking-widest uppercase text-slate-400 bg-slate-100 px-4 py-1.5 rounded-full">{t.id}</span>
+                      <span className={`px-4 py-1.5 rounded-full text-sm font-bold border ${t.status === "resolved" ? "bg-[#F2F9F8] text-[#338F88] border-[#338F88]/20" : "bg-[#FDF9F0] text-[#B89F5D] border-[#B89F5D]/20"}`}>
+                        {t.status === "resolved" ? "決議完成 RESOLVED" : "尚在討論 IN PROGRESS"}
+                      </span>
+                    </div>
+                    <h2 className="text-[57px] font-black text-slate-900 leading-[1.3] tracking-tight mb-8">
+                      {t.title}
+                    </h2>
+                    {t.desc && (
+                      <div className="border-l-8 border-[#B89F5D] bg-slate-50 p-8 rounded-r-3xl text-2xl text-slate-700 leading-relaxed font-medium mt-8 whitespace-pre-wrap">
+                        {t.desc}
+                      </div>
+                    )}
                   </div>
-                    </div>
-                  <h2 className="text-[57px] font-black text-slate-900 leading-[1.3] tracking-tight mb-8">
-                    {t.title}
-                  </h2>
-                  {t.desc && (
-                    <div className="border-l-8 border-[#B89F5D] bg-slate-50 p-8 rounded-r-3xl text-2xl text-slate-700 leading-relaxed font-medium mt-8 whitespace-pre-wrap">
-                      {t.desc}
-                    </div>
-                  )}
                 </div>
-              </div>
 
               {t.notes && (
                 <div data-pdf-block="true" className="w-full px-20 pt-2 mb-6">
