@@ -750,6 +750,10 @@ const xOffset = (pdfWidth - scaledWidth) / 2;
         );
       })}
 
+    </div>
+  );
+};
+
   return (
     <>
       <style>{`
