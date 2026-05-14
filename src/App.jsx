@@ -614,28 +614,28 @@ const MM_PER_PX = pdfWidth / 1200; // 每 px 對應多少 mm（scale=2 已在 ca
         {exportSelection.agenda && config.topics?.length > 0 && (
           <div data-export-section="agenda" className="w-full bg-[#F8FAFC] pb-10">
             {exportHeaderJSX}
-            <div data-pdf-block="true" className="w-full px-20 pt-6 pb-2">
-              <div className="bg-white px-16 py-10 rounded-t-[40px] shadow-sm border border-slate-200 border-b-0">
-                <h2 className="text-5xl font-black text-slate-900 flex items-center gap-6">
-                  <div className="w-4 h-12 bg-[#B89F5D] rounded-full"></div> 議程目錄
-                </h2>
+            <div data-pdf-block="true" className="w-full px-20 pt-6 pb-10">
+              <div className="bg-white rounded-[40px] shadow-sm border border-slate-200 overflow-hidden">
+                <div className="px-16 py-10 border-b border-slate-100">
+                  <h2 className="text-5xl font-black text-slate-900 flex items-center gap-6">
+                    <div className="w-4 h-12 bg-[#B89F5D] rounded-full"></div> 議程目錄
+                  </h2>
+                </div>
+                {config.topics.map((t, idx, arr) => (
+                  <div key={`agenda-${t.id}`} className={`px-16 py-8 flex gap-10 items-start ${idx !== arr.length - 1 ? 'border-b border-slate-100' : ''}`}>
+                    <div className="text-5xl font-black text-[#338F88]/30 w-16 pt-1">{String(idx + 1).padStart(2, "0")}</div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-4 mb-4">
+                        <span className="text-xl font-bold text-[#B89F5D] tracking-widest uppercase">{t.id}</span>
+                        <span className={`px-4 py-1.5 rounded-lg text-sm font-bold ${t.status === "resolved" ? "bg-[#338F88]/10 text-[#338F88]" : "bg-slate-100 text-slate-500"}`}>{t.status === "resolved" ? "已決議" : "討論中"}</span>
+                      </div>
+                      <h3 className="text-4xl font-bold text-slate-900 leading-tight mb-4">{t.title}</h3>
+                      <p className="text-2xl text-slate-600 leading-relaxed opacity-90 whitespace-pre-wrap">{t.desc}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-            {config.topics.map((t, idx, arr) => (
-              <div data-pdf-block="true" key={`agenda-${t.id}`} className="w-full px-20">
-                <div className={`bg-white px-16 py-8 border-x border-slate-200 shadow-sm flex gap-10 items-start ${idx === arr.length - 1 ? 'rounded-b-[40px] border-b pb-16 mb-10' : 'border-b border-slate-50'}`}>
-                  <div className="text-5xl font-black text-[#338F88]/30 w-16 pt-1">{String(idx + 1).padStart(2, "0")}</div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-4 mb-4">
-                      <span className="text-xl font-bold text-[#B89F5D] tracking-widest uppercase">{t.id}</span>
-                      <span className={`px-4 py-1.5 rounded-lg text-sm font-bold ${t.status === "resolved" ? "bg-[#338F88]/10 text-[#338F88]" : "bg-slate-100 text-slate-500"}`}>{t.status === "resolved" ? "已決議" : "討論中"}</span>
-                    </div>
-                    <h3 className="text-4xl font-bold text-slate-900 leading-tight mb-4">{t.title}</h3>
-                    <p className="text-2xl text-slate-600 leading-relaxed opacity-90 whitespace-pre-wrap">{t.desc}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
           </div>
         )}
 
@@ -665,21 +665,15 @@ const MM_PER_PX = pdfWidth / 1200; // 每 px 對應多少 mm（scale=2 已在 ca
               </div>
 
               {t.notes && (
-                <>
-                  <div data-pdf-block="true" className="w-full px-20 pt-2">
-                    <div className="bg-[#0F172A] rounded-t-[40px] px-14 pt-12 pb-6 relative overflow-hidden">
-                      <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-bl-full pointer-events-none" />
-                      <h3 className="text-2xl font-bold text-[#B89F5D] mb-2 flex items-center gap-5 uppercase tracking-widest"><Edit3 className="w-8 h-8" /> Live Resolution Note</h3>
-                    </div>
+                <div data-pdf-block="true" className="w-full px-20 pt-2 mb-10">
+                  <div className="bg-[#0F172A] rounded-[40px] px-14 pt-12 pb-14 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-bl-full pointer-events-none" />
+                    <h3 className="text-2xl font-bold text-[#B89F5D] mb-6 flex items-center gap-5 uppercase tracking-widest"><Edit3 className="w-8 h-8" /> Live Resolution Note</h3>
+                    {t.notes.split('\n').map((para, i) => (
+                      <div key={i} className="text-[26px] text-slate-100 leading-[1.8] font-medium whitespace-pre-wrap min-h-[2rem]">{para || " "}</div>
+                    ))}
                   </div>
-                  {t.notes.split('\n').map((para, i, arr) => (
-                    <div data-pdf-block="true" key={i} className="w-full px-20">
-                      <div className={`bg-[#0F172A] px-14 py-2 ${i === arr.length - 1 ? 'rounded-b-[40px] pb-14 mb-10' : ''}`}>
-                        <div className="text-[26px] text-slate-100 leading-[1.8] font-medium whitespace-pre-wrap min-h-[2rem]">{para || " "}</div>
-                      </div>
-                    </div>
-                  ))}
-                </>
+                </div>
               )}
 
               {images.length > 0 && (
