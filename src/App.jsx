@@ -738,7 +738,7 @@ const MM_PER_PX = pdfWidth / 1200; // 每 px 對應多少 mm（scale=2 已在 ca
       {isExporting && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(10,15,28,0.85)", zIndex: 9999, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "20px" }}>
           <div style={{ width: "48px", height: "48px", border: "4px solid rgba(184,159,93,0.3)", borderTop: "4px solid #B89F5D", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
-          <p style={{ color: "#B89F5D", fontWeight: "bold", fontSize: "16px", letterSpacing: "0.2em" }}>正在產生 PDF，請稍候...</p>
+          <p style={{ color: "#B89F5D", fontWeight: "bold", fontSize: "16px", letterSpacing: "0.2em" }}>正在產生檔案中，請稍候...</p>
           <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
       )}
