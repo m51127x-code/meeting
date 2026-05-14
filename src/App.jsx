@@ -732,12 +732,12 @@ const xOffset = (pdfWidth - scaledWidth) / 2;
             )}
 
             {images.length > 0 && (
-              <div data-pdf-block="true" className="w-full px-20 pb-6 pt-4">
-                <h3 className="text-2xl font-bold text-slate-400 flex items-center gap-4 uppercase tracking-widest pl-4">
-                  <ImageIcon className="w-8 h-8" /> Visual Assets
-                </h3>
-              </div>
-            )}
+  <div data-pdf-block="true" className="w-full px-20 pb-3 pt-2">
+    <h3 className="text-lg font-bold text-slate-400 flex items-center gap-3 uppercase tracking-widest pl-4">
+      <ImageIcon className="w-5 h-5" /> Visual Assets
+    </h3>
+  </div>
+)}
 
             {images.map((img, imgIdx) => (
               <div data-pdf-block="true" key={`img-${t.id}-${imgIdx}`} className="w-full px-20 pb-12">
