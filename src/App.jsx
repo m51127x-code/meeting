@@ -659,7 +659,7 @@ const xOffset = (pdfWidth - scaledWidth) / 2;
 
       {exportSelection.agenda && config.topics?.length > 0 && (
         <div data-export-section="agenda" className="w-full bg-[#F8FAFC] pb-10">
-          <div data-pdf-block="true" className="w-full bg-[#F8FAFC]">
+          
             {exportHeaderJSX}
             <div className="px-20 pt-6 pb-10">
               <div className="bg-white rounded-[40px] shadow-sm border border-slate-200 overflow-hidden">
@@ -694,26 +694,46 @@ const xOffset = (pdfWidth - scaledWidth) / 2;
         return (
           <div data-export-section={`topic-${t.id}`} data-topic-title={t.title} key={`topic-${t.id}`} className="w-full bg-[#F8FAFC] pb-10">
             <div data-pdf-block="true" className="w-full bg-[#F8FAFC]">
-              {exportHeaderJSX}
-              <div className="px-20 pt-8 pb-10">
-                <div className="bg-white px-16 py-14 rounded-[40px] shadow-sm border border-slate-200">
-                  <div className="flex items-center gap-3 mb-5">
-                    <span className="text-lg font-black tracking-widest uppercase text-slate-400 bg-slate-100 px-4 py-1.5 rounded-full">{t.id}</span>
-                    <span className={`px-4 py-1.5 rounded-full text-sm font-bold border ${t.status === "resolved" ? "bg-[#F2F9F8] text-[#338F88] border-[#338F88]/20" : "bg-[#FDF9F0] text-[#B89F5D] border-[#B89F5D]/20"}`}>
-                      {t.status === "resolved" ? "決議完成 RESOLVED" : "尚在討論 IN PROGRESS"}
-                    </span>
-                  </div>
-                  <h2 className="text-[57px] font-black text-slate-900 leading-[1.3] tracking-tight mb-8">
-                    {t.title}
-                  </h2>
-                  {t.desc && (
-                    <div className="border-l-8 border-[#B89F5D] bg-slate-50 p-8 rounded-r-3xl text-2xl text-slate-700 leading-relaxed font-medium mt-8 whitespace-pre-wrap">
-                      {t.desc}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+  {exportHeaderJSX}
+  <div className="px-20 pt-8 pb-0">
+
+    {/* 議題標籤列：改成純文字，不用膠囊 */}
+    <div className="flex items-center gap-4 mb-5 px-2">
+      <span className="text-sm font-black text-slate-400 tracking-[0.25em] uppercase">{t.id}</span>
+      <span className="text-sm font-bold" style={{ color: t.status === "resolved" ? "#338F88" : "#B89F5D" }}>
+        {t.status === "resolved" ? "✓ RESOLVED" : "● IN PROGRESS"}
+      </span>
+    </div>
+
+    {/* 議題內容卡片：拿掉大 padding，縮緊間距 */}
+    <div className="bg-white px-16 py-10 rounded-[32px] shadow-sm border border-slate-200">
+      <h2 className="text-[52px] font-black text-slate-900 leading-[1.3] tracking-tight mb-6">
+        {t.title}
+      </h2>
+      {t.desc && (
+        <div className="border-l-8 border-[#B89F5D] bg-slate-50 p-6 rounded-r-3xl text-2xl text-slate-700 leading-relaxed font-medium whitespace-pre-wrap">
+          {t.desc}
+        </div>
+      )}
+    </div>
+  </div>
+
+  {t.notes && (
+    <div className="w-full px-20 pt-4 pb-8">
+      <div className="bg-[#0F172A] rounded-[32px] px-14 pt-6 pb-7 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-bl-full pointer-events-none" />
+        <h3 className="text-xl font-bold text-[#B89F5D] mb-3 flex items-center gap-4 uppercase tracking-widest">
+          <Edit3 className="w-6 h-6" /> Live Resolution Note
+        </h3>
+        {t.notes.split('\n').map((para, i) => (
+          <div key={i} className="text-[24px] text-slate-100 leading-[1.8] font-medium whitespace-pre-wrap min-h-[1.8rem]">
+            {para || " "}
+          </div>
+        ))}
+      </div>
+    </div>
+  )}
+</div>
 
             {t.notes && (
               <div data-pdf-block="true" className="w-full px-20 pt-2 mb-6">
