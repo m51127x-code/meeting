@@ -626,7 +626,7 @@ const xOffset = (pdfWidth - scaledWidth) / 2;
           <div className="w-[55%] flex flex-col justify-center text-white relative z-10">
             <div className="flex items-center gap-5 mb-8">
               <div className="w-12 h-1.5 bg-[#B89F5D] rounded-full" />
-              <span className="text-[#B89F5D] font-black tracking-[0.4em] text-2xl uppercase">Strategic Session</span>
+              <span className="text-[#B89F5D] font-black tracking-[0.4em] text-2xl uppercase"></span>
             </div>
             <h1 className="font-bold mb-10 tracking-tight leading-[1.25] drop-shadow-lg whitespace-pre-wrap" style={{ fontSize: `${config.cover?.titleFontSize || 72}px` }}>
               {config.cover?.title || "未命名會議"}
@@ -908,7 +908,7 @@ const xOffset = (pdfWidth - scaledWidth) / 2;
                   <div className="w-full lg:w-[55%] relative z-10 flex flex-col justify-center">
                     <div className="flex items-center gap-5 mb-8">
                       <div className="w-12 h-1.5 bg-[#B89F5D] rounded-full" />
-                      <span className="text-[#B89F5D] font-black tracking-[0.4em] text-xs md:text-sm uppercase">Strategic Session</span>
+                      <span className="text-[#B89F5D] font-black tracking-[0.4em] text-xs md:text-sm uppercase">ENABLEMENT SESSION</span>
                     </div>
                     <h1 className="font-bold mb-10 tracking-tight leading-[1.25] drop-shadow-lg break-words whitespace-pre-wrap transition-all duration-300" style={{ fontSize: `clamp(36px, ${displayConfig.cover?.titleFontSize || 72}px, 88px)` }}>
                       {displayConfig.cover?.title || "未命名會議"}
