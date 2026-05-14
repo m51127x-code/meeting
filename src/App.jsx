@@ -731,24 +731,21 @@ const xOffset = (pdfWidth - scaledWidth) / 2;
               </div>
             )}
 
-            {images.length > 0 && (
-  <div data-pdf-block="true" className="w-full px-20 pb-3 pt-2">
-    <h3 className="text-lg font-bold text-slate-400 flex items-center gap-3 uppercase tracking-widest pl-4">
-      <ImageIcon className="w-5 h-5" /> Visual Assets
-    </h3>
-  </div>
-)}
+            
 
             {images.map((img, imgIdx) => (
-              <div data-pdf-block="true" key={`img-${t.id}-${imgIdx}`} className="w-full px-20 pb-12">
-                <div className="bg-white rounded-[40px] p-10 shadow-sm flex flex-col items-center border border-slate-200">
-                  <img src={img} className="max-w-full rounded-2xl" style={{ maxHeight: "1100px" }} alt={`img-${imgIdx}`} />
-                </div>
-              </div>
-            ))}
-          </div>
-        );
-      })}
+  <div data-pdf-block="true" key={`img-${t.id}-${imgIdx}`} className="w-full px-20 pb-12">
+    <div className="bg-white rounded-[40px] p-10 shadow-sm flex flex-col items-center border border-slate-200">
+      {imgIdx === 0 && (
+        <div className="w-full pb-6 mb-6 border-b border-slate-100 flex items-center gap-3">
+          <ImageIcon className="w-5 h-5 text-slate-400" />
+          <span className="text-lg font-bold text-slate-400 uppercase tracking-widest">Visual Assets</span>
+        </div>
+      )}
+      <img src={img} className="max-w-full rounded-2xl" style={{ maxHeight: "1100px" }} alt={`img-${imgIdx}`} />
+    </div>
+  </div>
+))}
 
     </div>
   );
