@@ -564,7 +564,7 @@ const MM_PER_PX = pdfWidth / 1200; // 每 px 對應多少 mm（scale=2 已在 ca
   const selectedTopicsList = config.topics?.filter(t => exportSelection[t.id]) || [];
 
   const exportHeaderJSX = (
-    <div data-pdf-block="true" className="w-full px-20 pt-16 pb-6 bg-[#F8FAFC]">
+    <div className="w-full px-20 pt-16 pb-6 bg-[#F8FAFC]">
       <div className="flex justify-between items-end border-b-[3px] border-[#B89F5D]/30 pb-6">
         <div className="flex flex-col gap-3">
           <span className="text-[14px] font-black text-[#B89F5D] tracking-[0.3em] uppercase">Strategic Session Record</span>
@@ -614,13 +614,17 @@ const MM_PER_PX = pdfWidth / 1200; // 每 px 對應多少 mm（scale=2 已在 ca
         {exportSelection.agenda && config.topics?.length > 0 && (
           <div data-export-section="agenda" className="w-full bg-[#F8FAFC] pb-10">
             {exportHeaderJSX}
-            <div data-pdf-block="true" className="w-full px-20 pt-6 pb-10">
+            <div data-pdf-block="true" className="w-full bg-[#F8FAFC]">
+              {exportHeaderJSX}
+              <div className="px-20 pt-6 pb-10">
               <div className="bg-white rounded-[40px] shadow-sm border border-slate-200 overflow-hidden">
                 <div className="px-16 py-10 border-b border-slate-100">
                   <h2 className="text-5xl font-black text-slate-900 flex items-center gap-6">
                     <div className="w-4 h-12 bg-[#B89F5D] rounded-full"></div> 議程目錄
                   </h2>
                 </div>
+                 </div>
+            </div>
                 {config.topics.map((t, idx, arr) => (
                   <div key={`agenda-${t.id}`} className={`px-16 py-8 flex gap-10 items-start ${idx !== arr.length - 1 ? 'border-b border-slate-100' : ''}`}>
                     <div className="text-5xl font-black text-[#338F88]/30 w-16 pt-1">{String(idx + 1).padStart(2, "0")}</div>
@@ -643,9 +647,9 @@ const MM_PER_PX = pdfWidth / 1200; // 每 px 對應多少 mm（scale=2 已在 ca
           const images = t.images?.length > 0 ? t.images : t.previewContent ? [t.previewContent] : [];
           return (
            <div data-export-section={`topic-${t.id}`} data-topic-title={t.title} key={`topic-${t.id}`} className="w-full bg-[#F8FAFC] pb-10">
-              {exportHeaderJSX}
-
-              <div data-pdf-block="true" className="w-full px-20 pt-8 pb-10">
+              <div data-pdf-block="true" className="w-full bg-[#F8FAFC]">
+                {exportHeaderJSX}
+                <div className="px-20 pt-8 pb-10">
                 <div className="bg-white px-16 py-14 rounded-[40px] shadow-sm border border-slate-200">
                   <div className="flex items-center gap-3 mb-5">
                     <span className="text-lg font-black tracking-widest uppercase text-slate-400 bg-slate-100 px-4 py-1.5 rounded-full">{t.id}</span>
@@ -653,6 +657,7 @@ const MM_PER_PX = pdfWidth / 1200; // 每 px 對應多少 mm（scale=2 已在 ca
                       {t.status === "resolved" ? "決議完成 RESOLVED" : "尚在討論 IN PROGRESS"}
                     </span>
                   </div>
+                    </div>
                   <h2 className="text-[57px] font-black text-slate-900 leading-[1.3] tracking-tight mb-8">
                     {t.title}
                   </h2>
@@ -665,10 +670,10 @@ const MM_PER_PX = pdfWidth / 1200; // 每 px 對應多少 mm（scale=2 已在 ca
               </div>
 
               {t.notes && (
-                <div data-pdf-block="true" className="w-full px-20 pt-2 mb-10">
-                  <div className="bg-[#0F172A] rounded-[40px] px-14 pt-12 pb-14 relative overflow-hidden">
+                <div data-pdf-block="true" className="w-full px-20 pt-2 mb-6">
+                  <div className="bg-[#0F172A] rounded-[40px] px-14 pt-7 pb-8 relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-bl-full pointer-events-none" />
-                    <h3 className="text-2xl font-bold text-[#B89F5D] mb-6 flex items-center gap-5 uppercase tracking-widest"><Edit3 className="w-8 h-8" /> Live Resolution Note</h3>
+                    <h3 className="text-2xl font-bold text-[#B89F5D] mb-4 flex items-center gap-5 uppercase tracking-widest"><Edit3 className="w-8 h-8" /> Live Resolution Note</h3>
                     {t.notes.split('\n').map((para, i) => (
                       <div key={i} className="text-[26px] text-slate-100 leading-[1.8] font-medium whitespace-pre-wrap min-h-[2rem]">{para || " "}</div>
                     ))}
