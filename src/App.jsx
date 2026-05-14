@@ -823,6 +823,16 @@ const xOffset = (pdfWidth - scaledWidth) / 2;
                 <button onClick={() => setActivePage("agenda")} className={`w-full mt-1 rounded-2xl font-bold flex items-center transition-all ${isSidebarOpen ? "px-4 py-3.5 text-[15px] justify-start" : "p-3.5 justify-center"} ${activePage === "agenda" ? "bg-white/10 text-[#B89F5D]" : "text-slate-400 hover:text-white hover:bg-white/5"}`}>
                   {!isSidebarOpen ? <List className="w-5 h-5" /> : "議程目錄"}
                 </button>
+                {!isViewer && (
+  <button 
+    onClick={() => setActivePage("allnotes")} 
+    className={`w-full mt-1 rounded-2xl font-bold flex items-center transition-all 
+      ${isSidebarOpen ? "px-4 py-3.5 text-[15px] justify-start" : "p-3.5 justify-center"} 
+      ${activePage === "allnotes" ? "bg-white/10 text-[#B89F5D]" : "text-slate-400 hover:text-white hover:bg-white/5"}`}
+  >
+    {!isSidebarOpen ? <FileText className="w-5 h-5" /> : "總筆記"}
+  </button>
+)}
               </div>
 
               <div className={`py-6 flex-1 flex flex-col ${isSidebarOpen ? "px-3" : "items-center px-0"}`}>
@@ -972,7 +982,41 @@ const xOffset = (pdfWidth - scaledWidth) / 2;
                 </div>
               </div>
             )}
-
+{activePage === "allnotes" && !isViewer && (
+  <div className="min-h-screen px-8 md:px-16 pt-32 pb-24 mx-auto w-full max-w-[1000px] xl:max-w-[1200px]">
+    <div className="flex items-center gap-4 mb-8">
+      <div className="w-10 h-1 bg-[#B89F5D] rounded-full" />
+      <span className="text-[#B89F5D] font-black tracking-[0.4em] text-[11px] uppercase">ALL NOTES</span>
+    </div>
+    <h2 className="text-[36px] md:text-[48px] font-black text-slate-900 mb-10 leading-tight tracking-tighter">總筆記</h2>
+    <div className="space-y-6">
+      {config.topics?.length > 0 ? config.topics.map((t) => (
+        <div key={t.id} className="bg-white rounded-[32px] border border-slate-200 overflow-hidden shadow-sm">
+          {/* topic 標題列 */}
+          <div className="px-8 py-5 border-b border-slate-100 flex items-center gap-4">
+            <span className="text-[11px] font-black text-[#B89F5D] tracking-widest uppercase">{t.id}</span>
+            <span className={`w-1.5 h-1.5 rounded-full`} style={{ backgroundColor: t.status === "resolved" ? "#338F88" : "#B89F5D" }} />
+            <h3 className="text-[18px] font-bold text-slate-800">{t.title}</h3>
+          </div>
+          {/* 筆記內容 */}
+          <div className="px-8 py-6">
+            {t.notes ? (
+              <div className="text-[15px] leading-[1.8] text-slate-700 font-medium whitespace-pre-wrap">
+                {t.notes}
+              </div>
+            ) : (
+              <div className="text-slate-300 text-[14px] font-medium">尚無筆記</div>
+            )}
+          </div>
+        </div>
+      )) : (
+        <div className="py-20 text-center text-slate-400 font-medium bg-white rounded-[32px] border border-dashed border-slate-300">
+          尚未建立任何議題
+        </div>
+      )}
+    </div>
+  </div>
+)}
             {currentTopic && activePage !== "agenda" && activePage !== "cover" && activePage !== "summary" && (
               <div className={`px-8 md:px-16 pt-32 pb-48 mx-auto w-full max-w-[1000px] xl:max-w-[1200px] transition-all`}>
                 <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
