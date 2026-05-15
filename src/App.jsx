@@ -865,7 +865,7 @@ const xOffset = (pdfWidth - scaledWidth) / 2;
 
               {!isViewer && (
                 <div className={`mt-auto pt-4 pb-6 border-t border-slate-800/50 flex flex-col gap-2 px-4 w-full`}>
-                  <button onClick={generateShareLink} disabled={isGeneratingLink} className={`w-full py-3 rounded-xl border border-slate-700/50 bg-[#0F172A] text-slate-400 hover:bg-[#338F88]/10 hover:border-[#338F88]/40 hover:text-[#338F88] transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50`} title="推送到雲端並產生永久連結">
+                  <button onClick={generateShareLink} disabled={isGeneratingLink} className={`w-full py-3 rounded-xl border border-slate-700/50 bg-[#0F172A] text-slate-400 hover:bg-[#338F88]/10 hover:border-[#338F88]/40 hover:text-[#338F88] transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50`} title="推送到雲端並產生連結">
                     <Share2 className="w-4 h-4" />
                     {isSidebarOpen && <span className="text-[12px] font-bold tracking-wider">{isGeneratingLink ? "處理中..." : "分享連結"}</span>}
                   </button>
